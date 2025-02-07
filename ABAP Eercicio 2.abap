@@ -34,9 +34,6 @@ DATA: it_products TYPE SORTED TABLE OF ty_product
       it_clients TYPE SORTED TABLE OF ty_client
                     WITH UNIQUE KEY client_id.
 
-" Display header for product list
-WRITE: / 'Product', 20 'Quantity', 40 'Price', 60 'Status'.
-
 " Validation Subroutine
 FORM validate_quantity USING lv_quant TYPE i
                        CHANGING lv_status TYPE abap_bool.
@@ -45,6 +42,19 @@ FORM validate_quantity USING lv_quant TYPE i
   ELSE.
     lv_status = abap_true.
   ENDIF.
+ENDFORM.
+
+FORM display_stock.
+  DATA: lv_product_stock TYPE ty_product.
+  
+  " Display header for product list
+  WRITE: / '-----------------------------------------------------------'.
+  WRITE: / 'Product', 20 'Quantity', 40 'Price'.
+    
+  LOOP AT it_products INTO lv_product_stock.
+    WRITE: / lv_product_stock-prod_name, 20 lv_product_stock-prod_quantity, 40 lv_product_stock-prod_price.
+  ENDLOOP.
+  WRITE: / '-----------------------------------------------------------', /.
 ENDFORM.
 
 " Capital letter Subroutine
@@ -75,28 +85,35 @@ ENDFORM.
 
 " Subroutine for initializing the products
 FORM init_products.
-  DATA: wa_product TYPE ty_product.
+  DATA: wa_product TYPE ty_product,
+        lv_status TYPE abap_bool.
   " Initialize product data
   PERFORM next_id USING 'products'
                   CHANGING wa_product-prod_id.
   wa_product-prod_name = 'Cafe'.
-  wa_product-prod_quantity = 13.
+  wa_product-prod_quantity = 100.
   wa_product-prod_price = '2.50'.
   INSERT wa_product INTO TABLE it_products.
 
   PERFORM next_id USING 'products'
                   CHANGING wa_product-prod_id.
   wa_product-prod_name = 'Iced Tea'.
-  wa_product-prod_quantity = 0.
+  wa_product-prod_quantity = 100.
   wa_product-prod_price = '3.00'.
   INSERT wa_product INTO TABLE it_products.
 
   PERFORM next_id USING 'products'
                   CHANGING wa_product-prod_id.
+  
+  " Trying invalid quantity input
   wa_product-prod_name = 'Tarta'.
   wa_product-prod_quantity = -7.
   wa_product-prod_price = '5.00'.
-  INSERT wa_product INTO TABLE it_products.
+  PERFORM validate_quantity USING wa_product-prod_quantity 
+                            CHANGING lv_status.
+  IF lv_status = abap_true.
+    INSERT wa_product INTO TABLE it_products.
+  ENDIF.
 ENDFORM.
 
 " Class definition for client
@@ -120,10 +137,11 @@ ENDCLASS.
 " Class definition for order
 CLASS lcl_order DEFINITION.
   PUBLIC SECTION.
-    EVENTS:  fourth_wing EXPORTING VALUE(sender_ref) TYPE REF TO lcl_order. " The fourth order is 50% limited up to 25eur
+    EVENTS:  fourth_wing EXPORTING VALUE(sender_ref) TYPE REF TO lcl_order. " The fourth order is 50% limited up to 45eur
     METHODS: constructor IMPORTING iv_o_client  TYPE REF TO lcl_client
                                    iv_payment_method TYPE string,
-             add_product IMPORTING iv_prod_id TYPE i,
+             add_product IMPORTING iv_prod_id TYPE i
+                                   iv_quantity TYPE i,
              calculate_total,
              update_monthly_gains,
              display_order,
@@ -137,7 +155,8 @@ CLASS lcl_order DEFINITION.
           payment_method TYPE string,
           total          TYPE p DECIMALS 2,
           it_order_products TYPE STANDARD TABLE OF ty_product,
-          order_date     TYPE DATS.
+          order_date     TYPE DATS,
+          order_time     TYPE TIMS.
 ENDCLASS.
 
 " Handler definition for event Forth Wing
@@ -187,7 +206,7 @@ CLASS lcl_client IMPLEMENTATION.
 
   METHOD display_client.
     WRITE: / 'Client Name:', me->name, me->last_name.
-    WRITE: / 'N* Orders:', me->order_count.
+    WRITE: / 'N* Orders:', me->order_count, /.
   ENDMETHOD.
 
   METHOD get_order_count.
@@ -213,14 +232,23 @@ CLASS lcl_order IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD add_product.
-    DATA: wa_new_product TYPE ty_product.
+    DATA: wa_new_product TYPE ty_product,
+          wa_stored_product TYPE ty_product.
     READ TABLE it_products INTO wa_new_product WITH KEY prod_id = iv_prod_id.
     IF sy-subrc = 0.
+      READ TABLE it_products INTO wa_stored_product WITH KEY prod_id = iv_prod_id.
       DATA: lv_status TYPE abap_bool.
-      PERFORM validate_quantity USING wa_new_product-prod_quantity
+      
+      PERFORM validate_quantity USING iv_quantity
                                 CHANGING lv_status.
-      IF lv_status = abap_true.
+      IF lv_status = abap_true AND iv_quantity <= wa_stored_product-prod_quantity.
+        " Set product quantity in the order
+        wa_new_product-prod_quantity = iv_quantity.
         APPEND wa_new_product TO me->it_order_products.
+        
+        " Modify existences of that product in the stock
+        wa_stored_product-prod_quantity = wa_stored_product-prod_quantity - iv_quantity.
+        MODIFY it_products FROM wa_stored_product INDEX sy-tabix.
       ELSE.
         WRITE: / 'Invalid quantity for product:', wa_new_product-prod_name.
       ENDIF.
@@ -241,7 +269,7 @@ CLASS lcl_order IMPLEMENTATION.
 
   METHOD update_monthly_gains.
     gv_monthly_gains = gv_monthly_gains + total.
-    WRITE: / 'Monthly gains updated: ', gv_monthly_gains.
+    " WRITE: / 'Monthly gains updated: ', gv_monthly_gains, /.
   ENDMETHOD.
 
   METHOD get_o_client.
@@ -259,7 +287,7 @@ CLASS lcl_order IMPLEMENTATION.
   METHOD close_order.
     DATA: lv_order_count TYPE i,
           lo_o_client TYPE REF TO lcl_client.
-    
+
     lo_o_client = iv_o_client.
     lv_order_count = lo_o_client->get_order_count( ).
 
@@ -271,18 +299,20 @@ CLASS lcl_order IMPLEMENTATION.
     ENDIF.
     " We date and close the order
       me->order_date = sy-datum.
+      me->order_time = sy-uzeit.
   ENDMETHOD.
 
   " Method for displaying the order
   METHOD display_order.
     DATA: lv_product TYPE ty_product.
-    WRITE: / 'Order Details:'.
+    
+    WRITE: / '-------> Order Details:'.
     LOOP AT me->it_order_products INTO lv_product.
       WRITE: / lv_product-prod_name, 20 lv_product-prod_quantity, 40 lv_product-prod_price.
     ENDLOOP.
-    WRITE: / 'Total:', me->total.
+    WRITE: / 'Total:', me->total, /.
     me->o_client->display_client( ).
-    WRITE: / 'Date:', me->order_date.
+    WRITE: / 'Date:', me->order_date, '  ', me->order_time, /, /.
   ENDMETHOD.
 ENDCLASS.
 
@@ -297,16 +327,17 @@ CLASS lcl_fourth_wing_handler IMPLEMENTATION.
 
       lv_order_ref_total = lo_order_ref->get_total( ).
 
-        IF lv_order_ref_total < 25.
+        IF lv_order_ref_total < 45.
           " 50% Discount applied
           lv_order_ref_total = lv_order_ref_total / 2.
           lo_order_ref->set_total( iv_new_total = lv_order_ref_total ).
+          WRITE: / 'FOURTH WING!! 50% discount applied.', /.
 
           "now client order number is 0
           lo_o_client->reset_order_count( ).
 
         ELSE.
-          "lo_o_client->update_order_count().
+          lo_o_client->update_order_count( ).
         ENDIF.
     ENDMETHOD.
 
@@ -314,30 +345,39 @@ ENDCLASS.
 
 " Main Program Execution
 START-OF-SELECTION.
-  PERFORM init_products.
-  " Create a client
+
+  " Create a client / order / handler instance
   DATA: lo_client_fan TYPE REF TO lcl_client,
         lo_order TYPE REF TO lcl_order,
         lo_handler TYPE REF TO lcl_fourth_wing_handler.
-  
+
   lo_client_fan = NEW lcl_client( iv_name = 'John'
                                        iv_last_name = 'Cena' ).
   lo_handler = NEW lcl_fourth_wing_handler( ).
 
-  " Link event possible raiser to the handler
-  SET HANDLER lo_handler->on_fourth_wing FOR lo_order.
-
+  " Create stock
+  PERFORM init_products.
+  PERFORM display_stock.
+  
   "order
-  DO 4 TIMES.
+  DO 5 TIMES.
      " Create orders
     lo_order = NEW lcl_order( iv_payment_method = 'Credit card'
                                  iv_o_client = lo_client_fan ).
-    lo_order->add_product( iv_prod_id = 1 ).
-    lo_order->add_product( iv_prod_id = 2 ).
+
+    " Link event possible raiser to the handler
+    SET HANDLER lo_handler->on_fourth_wing FOR lo_order.
+    
+    " Add products
+    lo_order->add_product( iv_prod_id = 1 iv_quantity = 3 ).
+    lo_order->add_product( iv_prod_id = 2 iv_quantity = 2 ).
     lo_order->calculate_total( ).
+    " Close order
     lo_order->close_order( iv_o_client = lo_order->get_o_client( ) ).
     lo_order->update_monthly_gains( ).
     lo_order->display_order( ).
   ENDDO.
-
+  
+  " Check remaining stock and monthly gains
+  PERFORM display_stock.
   WRITE: / 'Final gains:', gv_monthly_gains.
