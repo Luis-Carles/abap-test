@@ -7,8 +7,9 @@ INCLUDE ZMAIN_FORMS.
 CLASS lcl_client DEFINITION.
   PUBLIC SECTION.
     METHODS:  constructor IMPORTING iv_name      TYPE string
-                                    iv_last_name TYPE string,
-              comeback    IMPORTING iv_client_id TYPE i,
+                                    iv_last_name TYPE string
+                                    iv_mode      TYPE string
+                                    iv_client_id TYPE i,
               update_order_count,
               display_client,
               reset_order_count,
@@ -63,38 +64,52 @@ CLASS lcl_client IMPLEMENTATION.
           lv_iv_last_name TYPE string,
           ls_client TYPE zclients.
 
-    IF iv_name IS INITIAL.
-      WRITE: / 'The name cannot be empty'.
-      RETURN.
+    IF iv_mode = 'new'.
+      IF iv_name IS INITIAL.
+        WRITE: / 'The name cannot be empty'.
+        RETURN.
+      ENDIF.
+
+      lv_iv_name = iv_name.
+      lv_iv_last_name = iv_last_name.
+      PERFORM first_to_upper USING iv_name
+                             CHANGING lv_iv_name.
+      PERFORM first_to_upper USING iv_last_name
+                             CHANGING lv_iv_last_name.
+
+      "Store it also in the table"
+      PERFORM next_id USING 'clients'
+                      CHANGING wa_client-client_id.
+
+      wa_client-name = lv_iv_name.
+      wa_client-last_name = lv_iv_last_name.
+      wa_client-order_count = 0.
+      APPEND wa_client TO it_clients.
+
+      me->client_id = wa_client-client_id.
+      me->name = lv_iv_name.
+      me->last_name = lv_iv_last_name.
+      me->order_count = 0.
+
+      " Store in Database Table
+      ls_client-client_id = wa_client-client_id.
+      ls_client-client_name = wa_client-name.
+      ls_client-client_last_name = wa_client-last_name.
+      ls_client-order_count = wa_client-order_count.
+      INSERT INTO zclients VALUES ls_client.
     ENDIF.
-
-    lv_iv_name = iv_name.
-    lv_iv_last_name = iv_last_name.
-    PERFORM first_to_upper USING iv_name
-                           CHANGING lv_iv_name.
-    PERFORM first_to_upper USING iv_last_name
-                           CHANGING lv_iv_last_name.
-
-    "Store it also in the table"
-    PERFORM next_id USING 'clients'
-                    CHANGING wa_client-client_id.
-
-    wa_client-name = lv_iv_name.
-    wa_client-last_name = lv_iv_last_name.
-    wa_client-order_count = 0.
-    APPEND wa_client TO it_clients.
-
-    me->client_id = wa_client-client_id.
-    me->name = lv_iv_name.
-    me->last_name = lv_iv_last_name.
-    me->order_count = 0.
-
-    " Store in Database Table
-    ls_client-client_id = wa_client-client_id.
-    ls_client-client_name = wa_client-name.
-    ls_client-client_last_name = wa_client-last_name.
-    ls_client-order_count = wa_client-order_count.
-    INSERT INTO zclients VALUES ls_client.
+    IF iv_mode = 'comeback'.
+      PERFORM search_client USING iv_client_id
+                          CHANGING wa_client.
+      IF sy-subrc = 0.
+        me->client_id = wa_client-client_id.
+        me->name = wa_client-name.
+        me->last_name = wa_client-last_name.
+        me->order_count = wa_client-order_count.
+      ELSE.
+        WRITE: / 'Client not found with that id. ', /.
+      ENDIF.
+    ENDIF.
   ENDMETHOD.
 
   METHOD update_order_count.
@@ -110,21 +125,6 @@ CLASS lcl_client IMPLEMENTATION.
     UPDATE zclients SET order_count = ls_client-order_count
       WHERE client_id = me->client_id.
     ENDSELECT.
-  ENDMETHOD.
-
-  METHOD comeback.
-    DATA: wa_client TYPE ty_client.
-
-    PERFORM search_client USING iv_client_id
-                          CHANGING wa_client.
-    IF sy-subrc = 0.
-      me->client_id = wa_client-client_id.
-      me->name = wa_client-name.
-      me->last_name = wa_client-last_name.
-      me->order_count = wa_client-order_count.
-    ELSE.
-      WRITE: / 'Client not found with that id. ', /.
-    ENDIF.
   ENDMETHOD.
 
   METHOD display_client.

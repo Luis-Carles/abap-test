@@ -247,3 +247,18 @@ FORM add_new_product USING iv_input_name TYPE zproducts-prod_name
     ls_product-prod_price = wa_product-prod_price.
     INSERT INTO zproducts VALUES ls_product.
 ENDFORM.
+
+FORM update_stock USING iv_prod_id TYPE zproducts-prod_id
+                        iv_prod_quantity TYPE zproducts-prod_quantity.
+
+    DATA: wa_product TYPE ty_product,
+          ls_product TYPE zproducts.
+
+    PERFORM search_product USING iv_prod_id
+                           CHANGING wa_product.
+
+    ls_product-prod_quantity = wa_product-prod_quantity + iv_prod_quantity.
+
+    UPDATE zproducts SET prod_quantity =  ls_product-prod_quantity
+      WHERE prod_id = iv_prod_id.
+ENDFORM.

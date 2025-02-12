@@ -57,20 +57,36 @@ START-OF-SELECTION.
   lo_handler = NEW lcl_fourth_wing_handler( ).
 
 " -------NEW CLIENT -----------
-  lo_client_fan = NEW lcl_client( iv_name = 'javier'
-                                      iv_last_name = 'Oliveira' ).
+  "lo_client_fan = NEW lcl_client( iv_name = 'javier'
+  "                                iv_last_name = 'Oliveira'
+  "                                iv_mode = 'new'
+  "                                iv_client_id = '1' ).
 
 
 " -------OLD CLIENT -----------
-  " lo_client_fan->comeback( iv_client_id = '1' ).
+  lo_client_fan = NEW lcl_client( iv_name = 'Luis'
+                                  iv_last_name = 'Carles'
+                                  iv_mode = 'comeback'
+                                  iv_client_id = '1' ).
 
 
-  "------STOCK ----------
-  "PERFORM add_new_product USING 'Orange Juice'
-  "                              1000
-  "                          '3.50'.
+  "------ NEW STOCK ---------- " REVISE!!
+  DATA: p_prod_name TYPE zproducts-prod_name,
+        p_prod_quantity TYPE zproducts-prod_quantity,
+        p_prod_price TYPE zproducts-prod_price.
+
+  p_prod_name = 'Ice Americano'.
+  p_prod_quantity = 5000.
+  p_prod_price = '1.50'.
+  PERFORM add_new_product USING p_prod_name
+                                p_prod_quantity
+                                p_prod_price.
 
   PERFORM display_stock.
+
+
+  "------ UPDATE STOCK -------- " DOING!!
+  " PERFORM update_stock USING '1' 66.
 
   "-----ORDERING --------
   DO 3 TIMES.
