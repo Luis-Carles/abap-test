@@ -1,12 +1,6 @@
 *&---------------------------------------------------------------------*
-*& Report  ZMAIN_CLASSES
-*&
+*&  Include           ZMAIN_CLASSESN
 *&---------------------------------------------------------------------*
-*&
-*&
-*&---------------------------------------------------------------------*
-REPORT ZMAIN_CLASSES.
-
 INCLUDE ZMAIN_FORMS.
 
 " Class definition for client
@@ -28,23 +22,13 @@ CLASS lcl_client DEFINITION.
           order_count TYPE i.
 ENDCLASS.
 
-TYPES: BEGIN OF ty_order,
-         o_client       TYPE REF TO lcl_client,
-         payment_method TYPE string,
-         total          TYPE p DECIMALS 2,
-         it_order_products TYPE STANDARD TABLE OF ty_product,
-         order_date     TYPE DATS,
-         order_time     TYPE TIMS,
-         order_id       TYPE i,
-       END OF ty_order.
-
 " Class definition for order
 CLASS lcl_order DEFINITION.
   PUBLIC SECTION.
     EVENTS:  fourth_wing EXPORTING VALUE(sender_ref) TYPE REF TO lcl_order. " The fourth order is 50% limited up to 45eur
     METHODS: constructor IMPORTING iv_o_client  TYPE REF TO lcl_client
                                    iv_payment_method TYPE string,
-             add_product IMPORTING iv_prod_id TYPE i
+             add_product IMPORTING iv_prod_id TYPE int2
                                    iv_quantity TYPE i,
              calculate_total,
              update_monthly_gains,
@@ -116,15 +100,16 @@ CLASS lcl_client IMPLEMENTATION.
   METHOD update_order_count.
     me->order_count = me->order_count + 1.
     " Update in Database table
-    DATA: lv_order_count TYPE zclients-order_count.
+    DATA: ls_client TYPE zclients.
 
-    SELECT order_count FROM zclients
-      INTO lv_order_count
+    SELECT * FROM zclients INTO ls_client
+       WHERE client_id = me->client_id.
+
+    ls_client-order_count = ls_client-order_count + 1.
+
+    UPDATE zclients SET order_count = ls_client-order_count
       WHERE client_id = me->client_id.
-    lv_order_count = lv_order_count + 1.
-
-    UPDATE zclients SET order_count = lv_order_count
-    WHERE client_id = me->client_id.
+    ENDSELECT.
   ENDMETHOD.
 
   METHOD comeback.
@@ -134,8 +119,8 @@ CLASS lcl_client IMPLEMENTATION.
                           CHANGING wa_client.
     IF sy-subrc = 0.
       me->client_id = wa_client-client_id.
-      me->client_name = wa_client-client_name.
-      me->client_last_name = wa_client-client_last_name.
+      me->name = wa_client-name.
+      me->last_name = wa_client-last_name.
       me->order_count = wa_client-order_count.
     ELSE.
       WRITE: / 'Client not found with that id. ', /.
@@ -187,7 +172,7 @@ CLASS lcl_order IMPLEMENTATION.
   METHOD add_product.
     DATA: wa_new_product TYPE ty_product,
           wa_stored_product TYPE ty_product,
-          wa_stored-ordproduct TYPE ty_product,
+          wa_stored_ordproduct TYPE ty_product,
           ls_ordproduct TYPE zordproducts,
           lv_stock TYPE i.
 
@@ -199,12 +184,21 @@ CLASS lcl_order IMPLEMENTATION.
       PERFORM search_product USING iv_prod_id
                              CHANGING wa_stored_product.
 
-      DATA: lv_status TYPE abap_bool.
+      DATA: lv_status TYPE abap_bool,
+            lv_status2 TYPE abap_bool.
 
       PERFORM validate_quantity USING iv_quantity
                                 CHANGING lv_status.
 
       IF lv_status = abap_true AND iv_quantity <= wa_stored_product-prod_quantity.
+        lv_status2 = abap_true.
+      ELSE.
+        lv_status2 = abap_false.
+      ENDIF.
+
+      IF lv_status2 = abap_false.
+        WRITE: / 'Invalid quantity for product:', wa_new_product-prod_name.
+      ELSE.
         " Set product quantity in the order
         wa_new_product-prod_quantity = iv_quantity.
         APPEND wa_new_product TO me->it_order_products.
@@ -229,13 +223,12 @@ CLASS lcl_order IMPLEMENTATION.
 
         " Modify also the stock in Database Table
         SELECT prod_quantity FROM zproducts
-          INTO lv_stock WHERE prod_id = wa_stored_product-prod_id.
+            INTO lv_stock WHERE prod_id = wa_stored_product-prod_id.
+        ENDSELECT.
 
-        UPDATE zproducts SET prod_quantity =  lv_stock - iv_quantity
-          WHERE prod_id = wa_stored_product-prod_id.
-
-      ELSE.
-        WRITE: / 'Invalid quantity for product:', wa_new_product-prod_name.
+        lv_stock = lv_stock - iv_quantity.
+        UPDATE zproducts SET prod_quantity =  lv_stock
+            WHERE prod_id = wa_stored_product-prod_id.
       ENDIF.
     ELSE.
       WRITE: / 'Product not found with ID:', iv_prod_id.
