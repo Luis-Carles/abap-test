@@ -7,41 +7,11 @@
 *&---------------------------------------------------------------------*
 REPORT ZMAIN_PROGRAM.
 
-" Datatables import
-TABLES: zclients,
-        zcorders,
-        zordproducts,
-        zproducts.
-
-" Global variable for monthly gains
-DATA: gv_monthly_gains TYPE p DECIMALS 2 VALUE 0.
-
-" Define the product structure and table
-TYPES: BEGIN OF ty_product,
-         prod_id        TYPE i,
-         prod_name      TYPE string,
-         prod_quantity  TYPE i,
-         prod_price     TYPE p DECIMALS 2,
-       END OF ty_product.
-
-" Define the aditional table for storing clients persistently
-TYPES: BEGIN OF ty_client,
-         client_id   TYPE i,
-         name        TYPE string,
-         last_name   TYPE string,
-         order_count TYPE i,
-       END OF ty_client.
-
-TYPES: ty_price TYPE p DECIMALS 2.
-
-" Variables Declaration
-DATA: it_products TYPE SORTED TABLE OF ty_product
-                    WITH UNIQUE KEY prod_id,
-      it_clients TYPE SORTED TABLE OF ty_client
-                    WITH UNIQUE KEY client_id.
+" Tables & Data import
+INCLUDE ZMAIN_TOP.
 
 " Classes & Soubroutines import
-INCLUDE ZMAIN_CLASSES.
+INCLUDE ZMAIN_CLS.
 
 "---------------------> Main Program Execution
 START-OF-SELECTION.
@@ -70,29 +40,30 @@ START-OF-SELECTION.
                                   iv_client_id = '1' ).
 
 
-  "------ NEW STOCK ---------- " REVISE!!
-  DATA: p_prod_name TYPE zproducts-prod_name,
-        p_prod_quantity TYPE zproducts-prod_quantity,
-        p_prod_price TYPE zproducts-prod_price.
+  "------ NEW STOCK ----------
+  "DATA: p_prod_name TYPE zproducts-prod_name,
+  "      p_prod_quantity TYPE zproducts-prod_quantity,
+  "      p_prod_price TYPE zproducts-prod_price.
 
-  p_prod_name = 'Ice Americano'.
-  p_prod_quantity = 5000.
-  p_prod_price = '1.50'.
-  PERFORM add_new_product USING p_prod_name
-                                p_prod_quantity
-                                p_prod_price.
+  "p_prod_name = 'Tiramisu'.
+  "p_prod_quantity = 1000.
+  "p_prod_price = '4.00'.
+  "PERFORM add_new_product USING p_prod_name
+  "                              p_prod_quantity
+  "                              p_prod_price.
+
+
+  "------ UPDATE STOCK --------
+  PERFORM update_stock USING '1' 78.
+
 
   PERFORM display_stock.
-
-
-  "------ UPDATE STOCK -------- " DOING!!
-  " PERFORM update_stock USING '1' 66.
 
   "-----ORDERING --------
   DO 3 TIMES.
      " Create orders
     lo_order = NEW lcl_order( iv_payment_method = 'Credit card'
-                                 iv_o_client = lo_client_fan ).
+                              iv_o_client       = lo_client_fan ).
 
     " Link event possible raiser to the handler
     SET HANDLER lo_handler->on_fourth_wing FOR lo_order.

@@ -1,5 +1,5 @@
 *&---------------------------------------------------------------------*
-*&  Include           ZMAIN_FORMS
+*&  Include           ZMAIN_FO1
 *&---------------------------------------------------------------------*
 
 " Validation Subroutine
@@ -70,6 +70,7 @@ FORM next_id USING iv_input_table TYPE string
 ENDFORM.
 
 " Subroutine for initializing the products
+" WILL FAIL IF THOSE PRODUCTS ARE ALREADY IN Database Table!!!!!
 FORM init_products.
   DATA: wa_product TYPE ty_product,
         lv_status TYPE abap_bool,
@@ -238,7 +239,7 @@ FORM add_new_product USING iv_input_name TYPE zproducts-prod_name
     wa_product-prod_name = iv_input_name.
     wa_product-prod_quantity = iv_input_quantity.
     wa_product-prod_price = iv_input_price.
-    INSERT wa_product INTO TABLE it_products.
+    "INSERT wa_product INTO TABLE it_products.
 
     " Store into database table
     ls_product-prod_id = wa_product-prod_id.
@@ -261,4 +262,8 @@ FORM update_stock USING iv_prod_id TYPE zproducts-prod_id
 
     UPDATE zproducts SET prod_quantity =  ls_product-prod_quantity
       WHERE prod_id = iv_prod_id.
+ENDFORM.
+
+FORM calcule_stats.
+  " DOING !!
 ENDFORM.
