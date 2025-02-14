@@ -34,13 +34,14 @@ START-OF-SELECTION.
 
 
 " -------OLD CLIENT -----------
-  lo_client_fan = NEW lcl_client( iv_name = 'Luis'
-                                  iv_last_name = 'Carles'
+  lo_client_fan = NEW lcl_client( iv_name = 'Ismael'
+                                  iv_last_name = 'Rivera'
                                   iv_mode = 'comeback'
-                                  iv_client_id = '1' ).
+                                  iv_client_id = '2' ).
 
 
   "------ NEW STOCK ----------
+
   "DATA: p_prod_name TYPE zproducts-prod_name,
   "      p_prod_quantity TYPE zproducts-prod_quantity,
   "      p_prod_price TYPE zproducts-prod_price.
@@ -54,10 +55,11 @@ START-OF-SELECTION.
 
 
   "------ UPDATE STOCK --------
-  PERFORM update_stock USING '1' 78.
+  PERFORM update_stock USING '1' 10.
 
 
   PERFORM display_stock.
+
 
   "-----ORDERING --------
   DO 3 TIMES.
@@ -70,7 +72,7 @@ START-OF-SELECTION.
 
     " Add products
     lo_order->add_product( iv_prod_id = 1 iv_quantity = 3 ).
-    lo_order->add_product( iv_prod_id = 3 iv_quantity = 2 ).
+    lo_order->add_product( iv_prod_id = 2 iv_quantity = 2 ).
     lo_order->calculate_total( ).
     " Close order
     lo_order->close_order( iv_o_client = lo_order->get_o_client( ) ).

@@ -263,7 +263,3 @@ FORM update_stock USING iv_prod_id TYPE zproducts-prod_id
     UPDATE zproducts SET prod_quantity =  ls_product-prod_quantity
       WHERE prod_id = iv_prod_id.
 ENDFORM.
-
-FORM calcule_stats.
-  " DOING !!
-ENDFORM.

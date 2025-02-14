@@ -163,7 +163,7 @@ CLASS lcl_order IMPLEMENTATION.
 
     " Store in Database table
     ls_order-order_id = me->order_id.
-    ls_order-order_id = iv_o_client->get_client_id( ).
+    ls_order-order_client = iv_o_client->get_client_id( ).
     ls_order-payment_method = me->payment_method.
     INSERT INTO zcorders VALUES ls_order.
 
