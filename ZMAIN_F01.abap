@@ -1,5 +1,5 @@
 *&---------------------------------------------------------------------*
-*&  Include           ZMAIN_FO1
+*&  Include           ZMAIN_F01
 *&---------------------------------------------------------------------*
 
 " Validation Subroutine
@@ -145,7 +145,7 @@ FORM search_client USING iv_input_id TYPE i
       rv_found-last_name = ls_client-client_last_name.
       rv_found-order_count = ls_client-order_count.
     ELSE.
-       WRITE: / 'Error during searching. ', /.
+       WRITE: / 'Error during searching a client. ', /.
     ENDIF.
 
 ENDFORM.
@@ -168,12 +168,12 @@ FORM search_product USING iv_input_id TYPE int2
       rv_found-prod_quantity = ls_product-prod_quantity.
 
     ELSE.
-      WRITE: / 'Error during searching. ', /.
+      WRITE: / 'Error during searching a product. ', /.
     ENDIF.
 
 ENDFORM.
 
-" Subroutine for searching a unique product  in a list of products by given order id / prod_id
+" Subroutine for searching a unique product in a list of products by given order id / prod_id
 FORM search_unique_product_list USING iv_input_order_id
                                       iv_input_prod_id
                          CHANGING rv_found TYPE ty_product.
@@ -195,7 +195,7 @@ FORM search_unique_product_list USING iv_input_order_id
      rv_found-prod_quantity = ls_ordproduct-prod_quantity.
      rv_found-prod_price = wa_product-prod_price.
   ELSE.
-      WRITE: / 'Error during searching. ', /.
+      WRITE: / 'Error during searching a product inside an order. ', /.
   ENDIF.
 ENDFORM.
 
@@ -220,7 +220,7 @@ FORM search_product_list USING iv_input_order_id
         APPEND wa_product TO rv_found.
       ENDLOOP.
     ELSE.
-      WRITE: / 'Error during searching.', /.
+      WRITE: / 'Error during searching a product list.', /.
     ENDIF.
 
 ENDFORM.
@@ -262,4 +262,72 @@ FORM update_stock USING iv_prod_id TYPE zproducts-prod_id
 
     UPDATE zproducts SET prod_quantity =  ls_product-prod_quantity
       WHERE prod_id = iv_prod_id.
+ENDFORM.
+
+" manually override the parameter introduction
+FORM manual_interaction.
+
+*    " Create a client / order / handler instance
+*    DATA: lo_client_fan TYPE REF TO lcl_client,
+*          lo_order TYPE REF TO lcl_order,
+*          lo_handler TYPE REF TO lcl_fourth_wing_handler,
+*          wa_product  TYPE ty_product,
+*          ls_product  TYPE zproducts.
+*
+*
+*    lo_handler = NEW lcl_fourth_wing_handler( ).
+*
+*  " -------NEW CLIENT -----------
+*    "lo_client_fan = NEW lcl_client( iv_name = 'javier'
+*    "                                iv_last_name = 'Oliveira'
+*    "                                iv_mode = 'new'
+*    "                                iv_client_id = '1' ).
+*
+*
+*  " -------OLD CLIENT -----------
+*    lo_client_fan = NEW lcl_client( iv_name = 'Ismael'
+*                                    iv_last_name = 'Rivera'
+*                                    iv_mode = 'comeback'
+*                                    iv_client_id = '2' ).
+*
+*
+*    "------ NEW STOCK ----------
+*
+*    "DATA: p_prod_name TYPE zproducts-prod_name,
+*    "      p_prod_quantity TYPE zproducts-prod_quantity,
+*    "      p_prod_price TYPE zproducts-prod_price.
+*
+*    "p_prod_name = 'Tiramisu'.
+*    "p_prod_quantity = 1000.
+*    "p_prod_price = '4.00'.
+*    "PERFORM add_new_product USING p_prod_name
+*    "                              p_prod_quantity
+*    "                              p_prod_price.
+*
+*
+*    "------ UPDATE STOCK --------
+*    PERFORM update_stock USING '1' 10.
+*
+*
+*    PERFORM display_stock.
+*
+*
+*    "-----ORDERING --------
+*    DO 3 TIMES.
+*       " Create orders
+*      lo_order = NEW lcl_order( iv_payment_method = 'Credit card'
+*                                iv_o_client       = lo_client_fan ).
+*
+*      " Link event possible raiser to the handler
+*      SET HANDLER lo_handler->on_fourth_wing FOR lo_order.
+*
+*      " Add products
+*      lo_order->add_product( iv_prod_id = 1 iv_quantity = 3 ).
+*      lo_order->add_product( iv_prod_id = 2 iv_quantity = 2 ).
+*      lo_order->calculate_total( ).
+*      " Close order
+*      lo_order->close_order( iv_o_client = lo_order->get_o_client( ) ).
+*      lo_order->update_monthly_gains( ).
+*      lo_order->display_order( ).
+*    ENDDO.
 ENDFORM.

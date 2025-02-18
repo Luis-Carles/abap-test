@@ -1,7 +1,7 @@
 *&---------------------------------------------------------------------*
 *&  Include           ZMAIN_CLS
 *&---------------------------------------------------------------------*
-INCLUDE ZMAIN_FO1.
+INCLUDE ZMAIN_F01.
 
 " Class definition for client
 CLASS lcl_client DEFINITION.

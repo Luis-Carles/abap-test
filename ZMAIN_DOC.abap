@@ -8,7 +8,9 @@
 REPORT ZMAIN_DOC.
 
 START-OF-SELECTION.
-
+  FORMAT COLOR OFF.
+  
+  FORMAT COLOR 2.
   WRITE: / 'CAFETERIA TEST PROJECT'.
   WRITE: / 'by Luis Carles Dura'.
   WRITE: / 'at DBDS 2/14/2025', /.
@@ -24,61 +26,62 @@ START-OF-SELECTION.
 
   " Database Tables
   WRITE: / 'ER Model for Database Tables:', /.
-  FORMAT COLOR OFF.
 
   WRITE: / '  +------------------+'.
   WRITE: / '  |   ZCLIENTS       |'.
   WRITE: / '  +------------------+'.
-  FORMAT COLOR 1.
+  FORMAT COLOR 4.
   WRITE: / '  | CLIENT_ID (PK)   |'.
-  FORMAT COLOR OFF.
+  FORMAT COLOR 2.
   WRITE: / '  | CLIENT_NAME      |'.
   WRITE: / '  | CLIENT_LAST_NAME |'.
   WRITE: / '  | ORDER_COUNT      |'.
   WRITE: / '  +------------------+'.
 
+  FORMAT COLOR 3.
   WRITE: / '        |1'.
-  FORMAT COLOR 2.
   WRITE: / '        |'.
   WRITE: / '        | n'.
-  FORMAT COLOR OFF.
+  FORMAT COLOR 2.
   WRITE: / '  +------------------+'.
   WRITE: / '  |   ZCORDERS       |'.
   WRITE: / '  +------------------+'.
-  FORMAT COLOR 1.
+  FORMAT COLOR 4.
   WRITE: / '  | ORDER_ID (PK)    |'.
-  FORMAT COLOR OFF.
+  FORMAT COLOR 2.
   WRITE: / '  | TOTAL            |'.
   WRITE: / '  | ORDER_DATE       |'.
+  FORMAT COLOR 4.
   WRITE: / '  | ORDER_CLIENT (FK)|'.
+  FORMAT COLOR 2.
   WRITE: / '  +------------------+'.
 
+  FORMAT COLOR 3.
   WRITE: / '        |1'.
-  FORMAT COLOR 2.
   WRITE: / '        |'.
   WRITE: / '        | n'.
-  FORMAT COLOR OFF.
+  FORMAT COLOR 2.
   WRITE: / '  +------------------+'.
   WRITE: / '  | ZORDPRODUCTS     |'.
   WRITE: / '  +------------------+'.
-  FORMAT COLOR 1.
+  FORMAT COLOR 4.
   WRITE: / '  | ORDER_ID (FK)    |'.
   WRITE: / '  | PROD_ID (FK)     |'.
-  FORMAT COLOR OFF.
+  FORMAT COLOR 2.
   WRITE: / '  | PROD_QUANTITY    |'.
   WRITE: / '  +------------------+'.
 
+  FORMAT COLOR 3.
   WRITE: / '        |n'.
-  FORMAT COLOR 2.
   WRITE: / '        |'.
   WRITE: / '        | m'.
-  FORMAT COLOR OFF.
+  FORMAT COLOR 2.
   WRITE: / '  +------------------+'.
   WRITE: / '  |   ZPRODUCTS      |'.
   WRITE: / '  +------------------+'.
-  FORMAT COLOR 1.
+  FORMAT COLOR 4.
   WRITE: / '  | PROD_ID (PK)     |'.
-  FORMAT COLOR OFF.
+  FORMAT COLOR 2.
   WRITE: / '  | PROD_NAME        |'.
   WRITE: / '  | PROD_QUANTITY    |'.
   WRITE: / '  | PROD_PRICE       |'.
