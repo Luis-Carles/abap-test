@@ -18,7 +18,7 @@ ENDMODULE.
 MODULE user_command_200 INPUT.
   CASE sy-ucomm.
     WHEN 'NEW_CLIENT'.
-      CALL SCREEN 210.   "SIGN IN -> New Client
+      CALL SCREEN 210.   "Register -> New Client
     WHEN 'COMEBACK'.
       CALL SCREEN 220.   "LOG IN  -> Comeback
     WHEN 'BACK'.
@@ -33,8 +33,24 @@ MODULE user_command_210 INPUT.
   CASE sy-ucomm.
     WHEN 'CANCEL'.
       CALL SCREEN 200.
-    WHEN 'EXIT'.
-      LEAVE PROGRAM.
+    WHEN 'REGISTER'.
+      IF wa_sclient-name IS NOT INITIAL AND wa_sclient-last_name IS NOT INITIAL.
+         " -------NEW CLIENT -----------
+         lo_client_fan = NEW lcl_client( iv_name = wa_sclient-name
+                                         iv_last_name = wa_sclient-last_name
+                                         iv_mode = 'new'
+                                         iv_client_id = '0' ).
+
+         CALL SCREEN 215. "Welcome Screen.
+      ENDIF.
+  ENDCASE.
+ENDMODULE.
+
+" PAI for screen_215 CLIENT WELCOME
+MODULE user_command_215 INPUT.
+  CASE sy-ucomm.
+    WHEN 'ORDER'.
+      CALL SCREEN 230.   "Client Menu --> Ordering
   ENDCASE.
 ENDMODULE.
 
@@ -49,7 +65,5 @@ MODULE user_command_300 INPUT.
       CALL SCREEN 330.
     WHEN 'BACK'.
       CALL SCREEN 100.
-    WHEN 'EXIT'.
-      LEAVE PROGRAM.
   ENDCASE.
 ENDMODULE.

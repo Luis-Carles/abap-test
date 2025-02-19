@@ -8,4 +8,11 @@ INCLUDE ZMAIN_CLS.
 " Screen Variables Declaration
 DATA: wa_sclient TYPE ty_client,
       wa_sproduct TYPE ty_product,
-      gv_button_enabled TYPE char1.
+      lv_payment_method TYPE zcorders-payment_method.
+
+
+" Create a client / order / handler instance
+DATA: lo_client_fan TYPE REF TO lcl_client,
+      lo_order TYPE REF TO lcl_order,
+      lo_handler TYPE REF TO lcl_fourth_wing_handler,
+      ls_product  TYPE zproducts.
