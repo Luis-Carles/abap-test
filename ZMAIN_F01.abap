@@ -225,6 +225,22 @@ FORM search_product_list USING iv_input_order_id
 
 ENDFORM.
 
+FORM search_most_recent_order USING iv_input_client_id
+                              CHANGING rv_found TYPE DATS.
+  DATA: wa_date TYPE DATS.
+
+  SELECT MAX( order_date )
+    INTO wa_date
+    FROM zcorders
+    WHERE order_client = iv_input_client_id.
+
+  IF sy-subrc = 0.
+    rv_found = wa_date.
+  ELSE.
+    WRITE: / 'Error during searching the last order date.', /.
+  ENDIF.
+ENDFORM.
+
 " UE Soubroutine to add a new product ti the table.
 FORM add_new_product USING iv_input_name TYPE zproducts-prod_name
                            iv_input_quantity TYPE zproducts-prod_quantity

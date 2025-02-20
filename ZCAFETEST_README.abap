@@ -76,6 +76,7 @@ REPORT ZCAFETEST_README.
 *              0210: Register (New Client)
 *              0215: Welcome New Client
 *              0220: Log in (Comeback)
+*              0225: Welcome Old Client
 *              0230: Client Menu (Ordering)
 *              0290: Client Goodbye Screen
 

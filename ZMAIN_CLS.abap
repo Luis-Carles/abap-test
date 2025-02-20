@@ -14,7 +14,9 @@ CLASS lcl_client DEFINITION.
               display_client,
               reset_order_count,
               get_client_id   RETURNING VALUE(rv_client_id) TYPE i,
-              get_order_count RETURNING VALUE(rv_order_count) TYPE i.
+              get_order_count RETURNING VALUE(rv_order_count) TYPE i,
+              get_client_name RETURNING VALUE(rv_client_name) TYPE string,
+              get_client_last_name RETURNING VALUE(rv_client_last_name) TYPE string.
 
   PRIVATE SECTION.
     DATA: client_id TYPE i,
@@ -145,6 +147,14 @@ CLASS lcl_client IMPLEMENTATION.
 
   METHOD get_client_id.
     rv_client_id = me->client_id.
+  ENDMETHOD.
+
+  METHOD get_client_name.
+    rv_client_name = me->name.
+  ENDMETHOD.
+
+  METHOD get_client_last_name.
+    rv_client_last_name = me->last_name.
   ENDMETHOD.
 ENDCLASS.
 

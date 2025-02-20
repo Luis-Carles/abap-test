@@ -8,7 +8,8 @@ INCLUDE ZMAIN_CLS.
 " Screen Variables Declaration
 DATA: wa_sclient TYPE ty_client,
       wa_sproduct TYPE ty_product,
-      lv_payment_method TYPE zcorders-payment_method.
+      lv_payment_method TYPE zcorders-payment_method,
+      wa_lorder_date TYPE zcorders-order_date.
 
 
 " Create a client / order / handler instance
