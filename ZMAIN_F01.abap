@@ -334,7 +334,7 @@ FORM update_product USING iv_new_product TYPE zproducts.
   IF sy-subrc = 0.
     UPDATE zproducts SET prod_name = iv_new_product-prod_name
                          prod_price = iv_new_product-prod_price
-                         prod_quantity = iv_new_product-prod_price
+                         prod_quantity = prod_quantity + iv_new_product-prod_quantity
            WHERE prod_id = iv_new_product-prod_id.
   ENDIF.
 ENDFORM.

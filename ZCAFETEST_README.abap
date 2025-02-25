@@ -11,7 +11,7 @@ REPORT ZCAFETEST_README.
 * by Luis Carles Dura
 * at DBDS 2/14/2025'
 * https://github.com/Luis-Carles/abap-test
-* version 1.0
+* version 1.0.9
 *
 
 * -----------Abstract:
@@ -83,7 +83,9 @@ REPORT ZCAFETEST_README.
 * Screens [300-399] ------> Employee Mode Actions
 *              0300: Employee Menu
 *              0310: (Update Stock)
+*              0315: Successfull Update screen
 *              0320: Modify Inventory (Add New Product)
+*              0325: Successfull Modifications screen
 *              0330: (Retrieve Statistics)
 
 *   .....................

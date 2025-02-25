@@ -62,6 +62,14 @@ MODULE status_320 OUTPUT.
   SET PF-STATUS 'EMPLOYEE_ADDPROD'.
 ENDMODULE.
 
+MODULE status_325 OUTPUT.
+  SET PF-STATUS 'FINAL-GREETINGS'.
+ENDMODULE.
+
+MODULE status_330 OUTPUT.
+  SET PF-STATUS 'EMPLOYEE_STATS'.
+ENDMODULE.
+
 MODULE retrieve_client OUTPUT.
   wa_sclient-name = lo_client_fan->get_client_name( ).
   wa_sclient-last_name = lo_client_fan->get_client_last_name( ).
@@ -74,14 +82,51 @@ MODULE retrieve_lorder_date OUTPUT.
                                    CHANGING wa_lorder_date.
 ENDMODULE.
 
-MODULE retrieve_product OUTPUT.
-  DATA: ls_updated_product TYPE ty_product.
+MODULE retrieve_product_315 OUTPUT.
+  DATA: ls_updated_product TYPE ty_product,
+        lv_id_int TYPE int2.
+  lv_id_int = wa_eproduct-prod_id.
 
-  PERFORM search_product_by_name USING wa_eproduct-prod_name
-                                 CHANGING ls_updated_product.
+  PERFORM search_product USING lv_id_int
+                         CHANGING ls_updated_product.
 
   wa_eproduct-prod_id = ls_updated_product-prod_id.
   wa_eproduct-prod_name = ls_updated_product-prod_name.
   wa_eproduct-prod_quantity = ls_updated_product-prod_quantity.
   wa_eproduct-prod_price = ls_updated_product-prod_price.
+ENDMODULE.
+
+MODULE retrieve_product_325 OUTPUT.
+  DATA: ls_new_product TYPE ty_product,
+        lv_name_string TYPE string.
+  lv_name_string = wa_nproduct-prod_name.
+
+  PERFORM search_product_by_name USING lv_name_string
+                                 CHANGING ls_new_product.
+
+  wa_nproduct-prod_id = ls_new_product-prod_id.
+  wa_nproduct-prod_name = ls_new_product-prod_name.
+  wa_nproduct-prod_quantity = ls_new_product-prod_quantity.
+  wa_nproduct-prod_price = ls_new_product-prod_price.
+ENDMODULE.
+
+MODULE retrieve_stats OUTPUT.
+  " Statistics Retrieving aditional import
+  DATA: ls_stats TYPE ZST_STATS.
+
+  "------ RETRIEVE STATISTICS --------
+  PERFORM calcule_unitary_stats CHANGING ls_stats.
+
+  IF sy-subrc = 0.
+    gs_stats = ls_stats.
+    PERFORM search_product USING gs_stats-BEST_SELLER
+          CHANGING wa_eproduct.
+    gv_best_seller = wa_eproduct-prod_name.
+
+    PERFORM search_product USING gs_stats-WORST_SELLER
+          CHANGING wa_eproduct.
+    gv_worst_seller = wa_eproduct-prod_name.
+  ELSE.
+    MESSAGE 'Error when trying to retrieve statistics.' TYPE 'E'.
+  ENDIF.
 ENDMODULE.

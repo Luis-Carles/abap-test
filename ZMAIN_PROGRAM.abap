@@ -10,8 +10,11 @@ REPORT ZMAIN_PROGRAM.
 " Tables & Data import
 INCLUDE ZMAIN_TOP.
 
-" Classes & Soubroutines import
+" Classes & Soubroutines (ZMAIN_F01) import
 INCLUDE ZMAIN_CLS.
+
+" Statistics Retrieving Subroutines import
+INCLUDE ZMAIN_F02.
 
 " SCREEN-SELECTION import
 INCLUDE ZMAIN_SCR.
@@ -104,14 +107,18 @@ START-OF-SELECTION.
       PERFORM update_stock USING e_pid e_quan.
     ENDIF.
   ENDIF.
-
-*  DATA: ls_stats TYPE ZST_STATS.
-*  IF e_stats = 'X'.
-     "------ RETRIEVE STATISTICS --------
-*    PERFORM ZMAIN_MONTHLY_STATS CHANGING ls_stats.
-*  ENDIF.
-
   PERFORM display_stock.
+
+  IF e_stats = 'X'.
+    " Statistics Retrieving aditional import
+    DATA: ls_stats TYPE ZST_STATS.
+
+    "------ RETRIEVE STATISTICS --------
+    PERFORM calcule_unitary_stats CHANGING ls_stats.
+
+    CALL FUNCTION 'ZMAIN_DISPLAY_USTATS'
+              IMPORTING ip_stats = ls_stats.
+  ENDIF.
 
   IF p_name IS NOT INITIAL.
     DATA: p_name_string TYPE string,

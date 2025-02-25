@@ -276,6 +276,8 @@ MODULE user_command_310 INPUT.
         MESSAGE 'Error: Please select an available product first.' TYPE 'E'.
       ENDIF.
     WHEN 'CANCEL'.
+      CLEAR wa_eproduct.
+      CLEAR wa_nproduct.
       CALL SCREEN 300.
   ENDCASE.
   CLEAR sy-ucomm.
@@ -288,6 +290,61 @@ MODULE user_command_315 INPUT.
       CLEAR wa_eproduct.
       CLEAR wa_nproduct.
 
+      CALL SCREEN 300.
+  ENDCASE.
+  CLEAR sy-ucomm.
+ENDMODULE.
+
+" PAI for screen_320 EMPLOYEE ADD NEW PRODUCT
+MODULE retrieve_input_values_320 INPUT.
+  MOVE: wa_nproduct-prod_name TO wa_nproduct-prod_name,
+        wa_nproduct-prod_quantity TO wa_nproduct-prod_quantity,
+        wa_nproduct-prod_price TO wa_nproduct-prod_price.
+ENDMODULE.
+
+MODULE user_command_320 INPUT.
+  CASE sy-ucomm.
+    WHEN 'ADD_PROD'.
+      "------ NEW STOCK (ADD NEW PRODUCT)----------
+      IF wa_nproduct-prod_name IS NOT INITIAL AND
+         wa_nproduct-prod_quantity IS NOT INITIAL AND
+         wa_nproduct-prod_price IS NOT INITIAL.
+
+        DATA: ov_name_char TYPE zproducts-prod_name,
+              ov_quantity_quan TYPE zproducts-prod_quantity,
+              ov_price_dec TYPE zproducts-prod_price.
+        ov_name_char = wa_nproduct-prod_name.
+        ov_quantity_quan = wa_nproduct-prod_quantity.
+        ov_price_dec = wa_nproduct-prod_price.
+
+        PERFORM add_new_product USING ov_name_char ov_quantity_quan ov_price_dec.
+        CALL SCREEN 325. " Employee Correct Addition Screen
+      ELSE.
+        MESSAGE: 'Error: The three fields are mandatory for the new product.' TYPE 'E'.
+      ENDIF.
+    WHEN 'BACK'.
+      CLEAR wa_nproduct.
+      CALL SCREEN 300.
+  ENDCASE.
+  CLEAR sy-ucomm.
+ENDMODULE.
+
+" PAI for screen_325 EMPLOYEE SUCCESFULL ADDED PRODUCt
+MODULE user_command_325 INPUT.
+  CASE sy-ucomm.
+    WHEN 'BACK'.
+      CLEAR wa_nproduct.
+
+      CALL SCREEN 300.
+  ENDCASE.
+  CLEAR sy-ucomm.
+ENDMODULE.
+
+" PAI for screen_330 EMPLOYEE RETRIEVE STATISTICS
+MODULE user_command_330 INPUT.
+  CASE sy-ucomm.
+    WHEN 'BACK'.
+      CLEAR gs_stats.
       CALL SCREEN 300.
   ENDCASE.
   CLEAR sy-ucomm.

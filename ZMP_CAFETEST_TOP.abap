@@ -13,7 +13,11 @@ DATA: wa_sclient TYPE ty_client,
       gv_payment_method TYPE string VALUE 'Credit Card',
       wa_lorder_date TYPE zcorders-order_date,
       gt_aproducts  TYPE TABLE OF ty_product,
-      gt_order_products TYPE TABLE OF ty_product.
+      gt_order_products TYPE TABLE OF ty_product,
+      gs_stats TYPE ZST_STATS,
+      gv_best_seller TYPE zproducts-prod_name,
+      gv_worst_seller TYPE zproducts-prod_name.
+
 
 
 " Create a client / order / handler instance
