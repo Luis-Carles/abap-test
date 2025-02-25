@@ -68,12 +68,18 @@ MODULE user_command_215 INPUT.
 ENDMODULE.
 
 " PAI for screen_220 lOG IN -> COMEBACK
+MODULE retrieve_input_values_220 INPUT.
+  MOVE: wa_sclient-name TO wa_sclient-name,
+        wa_sclient-last_name TO wa_sclient-last_name,
+        wa_sclient-client_id TO wa_sclient-client_id.
+ENDMODULE.
+
 MODULE user_command_220 INPUT.
   CASE sy-ucomm.
     WHEN 'CANCEL'.
       CLEAR wa_sclient.
       CALL SCREEN 200.
-    WHEN 'REGISTER'.
+    WHEN 'LOGIN'.
       IF wa_sclient-client_id IS NOT INITIAL.
          " -------OLD CLIENT -----------
          lo_client_fan = NEW lcl_client( iv_name = wa_sclient-name
@@ -98,20 +104,104 @@ MODULE user_command_225 INPUT.
 ENDMODULE.
 
 " PAI for screen_230 CLIENT ACTIONS MENU
+MODULE f4_aproduct_list INPUT.
+  DATA: lt_return TYPE TABLE OF ddshretval,
+        ls_return TYPE ddshretval,
+        lt_f4_tab TYPE TABLE OF dfies,
+        ls_f4_tab TYPE dfies.
+
+  CLEAR lt_f4_tab.
+  ls_f4_tab-fieldname = 'PROD_NAME'.
+  APPEND ls_f4_tab TO lt_f4_tab.
+  " gt_aproducts has STRING attributes: change to CHAR
+  " DOING!
+  CALL FUNCTION 'F4IF_INT_TABLE_VALUE_REQUEST'
+    EXPORTING
+      retfield        = 'PROD_NAME'
+      dynpprog        = sy-repid
+      dynpnr          = sy-dynnr
+      dynprofield     = 'WA_SPRODUCT-PROD_NAME'
+      value_org       = 'S'
+    TABLES
+      value_tab       = gt_aproducts
+      return_tab      = lt_return
+      field_tab       = lt_f4_tab
+    EXCEPTIONS
+      parameter_error = 1
+      no_values_found = 2
+      OTHERS          = 3.
+  IF sy-subrc = 0.
+    READ TABLE lt_return INTO ls_return INDEX 1.
+    IF sy-subrc = 0.
+      READ TABLE gt_aproducts INTO wa_sproduct
+        WITH KEY prod_name = ls_return-fieldval.
+      wa_sproduct-prod_name = ls_return-fieldval.
+    ENDIF.
+  ENDIF.
+ENDMODULE.
+
+MODULE retrieve_input_values_230 INPUT.
+  MOVE: wa_sproduct-prod_name TO wa_sproduct-prod_name,
+        wa_sproduct-prod_quantity TO wa_sproduct-prod_quantity,
+        gv_payment_method TO gv_payment_method.
+
+  DATA: wa_desired_product TYPE ty_product.
+  PERFORM search_product_by_name USING wa_sproduct-prod_name
+                            CHANGING wa_desired_product.
+        wa_sproduct-prod_id = wa_desired_product-prod_id.
+  MOVE: wa_sproduct-prod_id TO wa_sproduct-prod_id.
+ENDMODULE.
+
 MODULE user_command_230 INPUT.
   CASE sy-ucomm.
-    WHEN 'ADD-PRODUCT'.
-      LEAVE PROGRAM.
+    WHEN 'ADD_PRODUCT'.
+      "-----ORDERING (Adding products to order)--------
+      IF wa_sproduct-prod_id IS NOT INITIAL.
+        DATA: ov_prod_id TYPE int2,
+              ov_prod_quantity TYPE i.
+        ov_prod_id = wa_sproduct-prod_id.
+        ov_prod_quantity = wa_sproduct-prod_quantity.
+
+        lo_order->add_product( iv_prod_id = ov_prod_id iv_quantity = ov_prod_quantity ).
+        lo_order->calculate_total( ).
+        APPEND wa_sproduct TO gt_order_products.
+        CLEAR wa_sproduct.
+      ELSE.
+        MESSAGE 'Error: please select a valid available product.' TYPE 'E'.
+      ENDIF.
     WHEN 'ONEW_ORDER'.
-      LEAVE PROGRAM.
+      "-----ORDERING (Close order)--------
+      lo_order->close_order( iv_o_client = lo_order->get_o_client( ) ).
+      lo_order->update_monthly_gains( ).
+
+      CALL SCREEN 290.
     WHEN 'LOG_OUT'.
+      CALL SCREEN 290.
+  ENDCASE.
+  CLEAR sy-ucomm.
+ENDMODULE.
+
+" PAI for screen_290 GOODBYE MESSAGE
+MODULE user_command_290 INPUT.
+  CASE sy-ucomm.
+    WHEN 'BACK'.
       IF lo_client_fan IS NOT INITIAL.
         FREE lo_client_fan.
       ENDIF.
+      IF lo_order IS NOT INITIAL.
+        FREE lo_order.
+      ENDIF.
+      IF lo_handler IS NOT INITIAL.
+        FREE lo_handler.
+      ENDIF.
       CLEAR wa_sclient.
       CLEAR wa_lorder_date.
+      gv_payment_method = 'Credit Card'.
+      CLEAR wa_sproduct.
+      CLEAR gt_aproducts.
+      CLEAR gt_order_products.
 
-      LEAVE PROGRAM.
+      CALL SCREEN 100.
   ENDCASE.
   CLEAR sy-ucomm.
 ENDMODULE.
@@ -127,6 +217,78 @@ MODULE user_command_300 INPUT.
       CALL SCREEN 330.
     WHEN 'BACK'.
       CALL SCREEN 100.
+    WHEN 'EXIT'.
+      LEAVE PROGRAM.
+  ENDCASE.
+  CLEAR sy-ucomm.
+ENDMODULE.
+
+" PAI for screen_310 EMPLOYEE UPDATE STOCK
+MODULE retrieve_input_values_310 INPUT.
+  " Current values of the product
+  MOVE: wa_eproduct-prod_name TO wa_eproduct-prod_name.
+
+  DATA: wa_desired TYPE ty_product.
+  PERFORM search_product_by_name USING wa_eproduct-prod_name
+                            CHANGING wa_desired.
+  wa_eproduct-prod_id = wa_desired-prod_id.
+  wa_eproduct-prod_quantity = wa_desired-prod_quantity.
+  wa_eproduct-prod_price = wa_desired-prod_price.
+
+  MOVE: wa_eproduct-prod_id TO wa_eproduct-prod_id,
+        wa_eproduct-prod_quantity TO wa_eproduct-prod_quantity,
+        wa_eproduct-prod_price TO wa_eproduct-prod_price.
+
+  " New values for the product
+        wa_nproduct-prod_id = wa_eproduct-prod_id.
+  MOVE: wa_nproduct-prod_name TO wa_nproduct-prod_name,
+        wa_nproduct-prod_price TO wa_nproduct-prod_price,
+        wa_nproduct-prod_quantity TO wa_nproduct-prod_quantity.
+
+ENDMODULE.
+
+MODULE user_command_310 INPUT.
+  CASE sy-ucomm.
+    WHEN 'UPDATE_STOCK'.
+      IF wa_eproduct-prod_name IS NOT INITIAL.
+        DATA: lv_product TYPE zproducts.
+        lv_product-prod_id = wa_eproduct-prod_id.
+        lv_product-prod_name = wa_eproduct-prod_name.
+        lv_product-prod_quantity = wa_eproduct-prod_quantity.
+        lv_product-prod_price = wa_eproduct-prod_price.
+
+      "------ UPDATE STOCK (Update product name/price/quantity)------
+        IF wa_nproduct-prod_name IS NOT INITIAL.
+          lv_product-prod_name = wa_nproduct-prod_name.
+          PERFORM update_product USING lv_product.
+        ENDIF.
+        IF wa_nproduct-prod_price IS NOT INITIAL.
+          lv_product-prod_price = wa_nproduct-prod_price.
+          PERFORM update_product USING lv_product.
+        ENDIF.
+        IF wa_nproduct-prod_quantity IS NOT INITIAL.
+          lv_product-prod_quantity = wa_nproduct-prod_quantity.
+          PERFORM update_product USING lv_product.
+        ENDIF.
+
+        CALL SCREEN 315. " Employee Correct Update Screen
+      ELSE.
+        MESSAGE 'Error: Please select an available product first.' TYPE 'E'.
+      ENDIF.
+    WHEN 'CANCEL'.
+      CALL SCREEN 300.
+  ENDCASE.
+  CLEAR sy-ucomm.
+ENDMODULE.
+
+" PAI for screen_315 EMPLOYEE SUCCESFULL UPDATE
+MODULE user_command_315 INPUT.
+  CASE sy-ucomm.
+    WHEN 'BACK'.
+      CLEAR wa_eproduct.
+      CLEAR wa_nproduct.
+
+      CALL SCREEN 300.
   ENDCASE.
   CLEAR sy-ucomm.
 ENDMODULE.

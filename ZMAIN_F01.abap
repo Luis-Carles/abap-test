@@ -173,6 +173,27 @@ FORM search_product USING iv_input_id TYPE int2
 
 ENDFORM.
 
+" Subroutine for searching a product ID in ZPRODUCTS by product name
+FORM search_product_by_name USING iv_input_prod_name TYPE string
+                   CHANGING rv_found TYPE ty_product.
+
+  DATA: ls_product TYPE zproducts.
+
+    SELECT SINGLE * INTO ls_product
+      FROM zproducts
+      WHERE prod_name = iv_input_prod_name.
+
+    IF sy-subrc = 0.
+      " WRITE: / 'Product ID found!', ls_product-prod_id.
+      rv_found-prod_name = ls_product-prod_name.
+      rv_found-prod_id = ls_product-prod_id.
+      rv_found-prod_quantity = ls_product-prod_quantity.
+      rv_found-prod_price = ls_product-prod_price.
+    ELSE.
+      WRITE: / 'Error during searching a product by name. ', /.
+    ENDIF.
+ENDFORM.
+
 " Subroutine for searching a unique product in a list of products by given order id / prod_id
 FORM search_unique_product_list USING iv_input_order_id
                                       iv_input_prod_id
@@ -241,7 +262,27 @@ FORM search_most_recent_order USING iv_input_client_id
   ENDIF.
 ENDFORM.
 
-" UE Soubroutine to add a new product ti the table.
+FORM search_available_products CHANGING rv_found TYPE STANDARD TABLE OF ty_product.
+  DATA: it_aproducts TYPE TABLE OF zproducts,
+        wa_prod      TYPE ty_product.
+  SELECT * FROM zproducts
+    INTO TABLE it_aproducts
+    WHERE prod_quantity > 0.
+
+  IF sy-subrc = 0.
+    LOOP AT it_aproducts INTO DATA(ls_aproduct).
+      wa_prod-prod_id = ls_aproduct-prod_id.
+      wa_prod-prod_name = ls_aproduct-prod_name.
+      wa_prod-prod_quantity = ls_aproduct-prod_quantity.
+      wa_prod-prod_price = ls_aproduct-prod_price.
+      APPEND wa_prod TO rv_found.
+    ENDLOOP.
+  ELSE.
+    WRITE: / 'Error during searching available products.', /.
+  ENDIF.
+ENDFORM.
+
+" UE Subroutine to add a new product to the table.
 FORM add_new_product USING iv_input_name TYPE zproducts-prod_name
                            iv_input_quantity TYPE zproducts-prod_quantity
                            iv_input_price TYPE zproducts-prod_price.
@@ -265,6 +306,7 @@ FORM add_new_product USING iv_input_name TYPE zproducts-prod_name
     INSERT INTO zproducts VALUES ls_product.
 ENDFORM.
 
+" UE Subroutine that increases the stock of a product given a quantity
 FORM update_stock USING iv_prod_id TYPE zproducts-prod_id
                         iv_prod_quantity TYPE zproducts-prod_quantity.
 
@@ -278,6 +320,23 @@ FORM update_stock USING iv_prod_id TYPE zproducts-prod_id
 
     UPDATE zproducts SET prod_quantity =  ls_product-prod_quantity
       WHERE prod_id = iv_prod_id.
+ENDFORM.
+
+" UE Subroutine that changes the name/ price of a given product
+FORM update_product USING iv_new_product TYPE zproducts.
+
+  DATA: wa_product TYPE ty_product,
+        lv_id_int  TYPE int2.
+
+  lv_id_int = iv_new_product-prod_id.
+  PERFORM search_product USING lv_id_int
+                         CHANGING wa_product.
+  IF sy-subrc = 0.
+    UPDATE zproducts SET prod_name = iv_new_product-prod_name
+                         prod_price = iv_new_product-prod_price
+                         prod_quantity = iv_new_product-prod_price
+           WHERE prod_id = iv_new_product-prod_id.
+  ENDIF.
 ENDFORM.
 
 " manually override the parameter introduction
