@@ -83,50 +83,56 @@ MODULE retrieve_lorder_date OUTPUT.
 ENDMODULE.
 
 MODULE retrieve_product_315 OUTPUT.
-  DATA: ls_updated_product TYPE ty_product,
-        lv_id_int TYPE int2.
-  lv_id_int = wa_eproduct-prod_id.
-
-  PERFORM search_product USING lv_id_int
-                         CHANGING ls_updated_product.
-
-  wa_eproduct-prod_id = ls_updated_product-prod_id.
-  wa_eproduct-prod_name = ls_updated_product-prod_name.
-  wa_eproduct-prod_quantity = ls_updated_product-prod_quantity.
-  wa_eproduct-prod_price = ls_updated_product-prod_price.
+*  DATA: ls_updated_product TYPE ty_product,
+*        lv_id_int TYPE int2.
+*  lv_id_int = wa_eproduct-prod_id.
+*
+*  PERFORM search_product USING lv_id_int
+*                         CHANGING ls_updated_product.
+*
+*  wa_eproduct-prod_id = ls_updated_product-prod_id.
+*  wa_eproduct-prod_name = ls_updated_product-prod_name.
+*  wa_eproduct-prod_quantity = ls_updated_product-prod_quantity.
+*  wa_eproduct-prod_price = ls_updated_product-prod_price.
+  PERFORM collect_product_315.
 ENDMODULE.
 
 MODULE retrieve_product_325 OUTPUT.
-  DATA: ls_new_product TYPE ty_product,
-        lv_name_string TYPE string.
-  lv_name_string = wa_nproduct-prod_name.
-
-  PERFORM search_product_by_name USING lv_name_string
-                                 CHANGING ls_new_product.
-
-  wa_nproduct-prod_id = ls_new_product-prod_id.
-  wa_nproduct-prod_name = ls_new_product-prod_name.
-  wa_nproduct-prod_quantity = ls_new_product-prod_quantity.
-  wa_nproduct-prod_price = ls_new_product-prod_price.
+*  DATA: ls_new_product TYPE ty_product,
+*        lv_name_string TYPE string.
+*  lv_name_string = wa_nproduct-prod_name.
+*
+*  PERFORM search_product_by_name USING lv_name_string
+*                                 CHANGING ls_new_product.
+*
+*  wa_nproduct-prod_id = ls_new_product-prod_id.
+*  wa_nproduct-prod_name = ls_new_product-prod_name.
+*  wa_nproduct-prod_quantity = ls_new_product-prod_quantity.
+*  wa_nproduct-prod_price = ls_new_product-prod_price.
+  PERFORM collect_product_325.
 ENDMODULE.
 
 MODULE retrieve_stats OUTPUT.
-  " Statistics Retrieving aditional import
-  DATA: ls_stats TYPE ZST_STATS.
-
-  "------ RETRIEVE STATISTICS --------
-  PERFORM calcule_unitary_stats CHANGING ls_stats.
-
-  IF sy-subrc = 0.
-    gs_stats = ls_stats.
-    PERFORM search_product USING gs_stats-BEST_SELLER
-          CHANGING wa_eproduct.
-    gv_best_seller = wa_eproduct-prod_name.
-
-    PERFORM search_product USING gs_stats-WORST_SELLER
-          CHANGING wa_eproduct.
-    gv_worst_seller = wa_eproduct-prod_name.
-  ELSE.
-    MESSAGE 'Error when trying to retrieve statistics.' TYPE 'E'.
-  ENDIF.
+*  DATA: ls_stats TYPE ZST_STATS.
+*
+*  "------ RETRIEVE STATISTICS --------
+*  PERFORM calcule_unitary_stats CHANGING ls_stats.
+*
+*  IF sy-subrc = 0.
+*    gs_stats-AVG_ORDER_T = ls_stats-AVG_ORDER_T.
+*    gs_stats-AVG_PROD_ORD = ls_stats-AVG_PROD_ORD.
+*    gs_stats-AVG_ORD_CL = ls_stats-AVG_ORD_CL.
+*    gs_stats-COUNT_FW = ls_stats-COUNT_FW.
+*    gs_stats-COUNT_G = ls_stats-COUNT_G.
+*    "gs_stats-AVG_CS = ls_stats-AVG_CS.
+*    gs_stats-BEST_SELLER = ls_stats-BEST_SELLER.
+*    gs_stats-WORST_SELLER = ls_stats-WORST_SELLER.
+*
+*    gv_user = sy-uname.
+*    gv_date = sy-datum.
+*    gv_time = sy-uzeit.
+*  ELSE.
+*    MESSAGE 'Error when trying to retrieve statistics.' TYPE 'E'.
+*  ENDIF.
+  PERFORM collect_stats_330.
 ENDMODULE.

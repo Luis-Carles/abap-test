@@ -62,6 +62,7 @@ FORM calcule_counts CHANGING cv_count_fw TYPE zst_stats-COUNT_FW
 
   TYPES: BEGIN OF ty_count_prod,
           prod_id        TYPE zordproducts-prod_id,
+          prod_name      TYPE string,
           prod_quantity  TYPE zordproducts-prod_quantity,
          END OF ty_count_prod.
 
@@ -78,10 +79,11 @@ FORM calcule_counts CHANGING cv_count_fw TYPE zst_stats-COUNT_FW
         wa_row    TYPE ty_count_fw,
         wa_row2   TYPE ty_count_prod,
         wa_zordp  TYPE zordproducts,
+        wa_zprod  TYPE ty_product,
         lv_best_seller TYPE zst_stats-BEST_SELLER,
         lv_worst_seller TYPE zst_stats-WORST_SELLER,
-        lv_max_quantity          TYPE zordproducts-prod_quantity VALUE 100000,
-        lv_min_quantity          TYPE zordproducts-prod_quantity VALUE 0.
+        lv_max_quantity          TYPE zordproducts-prod_quantity VALUE 0,
+        lv_min_quantity          TYPE zordproducts-prod_quantity VALUE 100000.
 
   " FOR EACH ORDER
   SELECT COUNT(*) INTO lv_n
@@ -89,31 +91,34 @@ FORM calcule_counts CHANGING cv_count_fw TYPE zst_stats-COUNT_FW
 
   DO lv_n TIMES.
      lv_i = lv_i + 1.
+     CLEAR ls_corder.
      SELECT * INTO ls_corder
         FROM zcorders
         WHERE order_id = lv_i.
+     ENDSELECT.
 
-     " Adds the total
-     lv_result = lv_result + ls_corder-total.
+     IF ls_corder IS NOT INITIAL.
+       " Adds the total
+       lv_result = lv_result + ls_corder-total.
 
-     READ TABLE lt_fw WITH TABLE KEY client_id = ls_corder-order_client
-                      INTO wa_row.
-     IF sy-subrc <> 0.
-       wa_row-client_id = ls_corder-order_client.
-       wa_row-n_orders = '1'.
-       wa_row-n_fw = '0'.
-       INSERT wa_row INTO lt_fw.
-     ELSE.
-       wa_row-n_orders = wa_row-n_orders + 1.
-       IF wa_row-n_orders MOD 3 = 0 AND ls_corder-total < 50.
-          wa_row-n_fw = wa_row-n_fw + 1.
+       READ TABLE lt_fw WITH TABLE KEY client_id = ls_corder-order_client
+                        INTO wa_row.
+       IF sy-subrc <> 0.
+         wa_row-client_id = ls_corder-order_client.
+         wa_row-n_orders = '1'.
+         wa_row-n_fw = '0'.
+         INSERT wa_row INTO TABLE lt_fw.
+       ELSE.
+         wa_row-n_orders = wa_row-n_orders + 1.
+         IF wa_row-n_orders MOD 3 = 0 AND ls_corder-total < 50.
+            wa_row-n_fw = wa_row-n_fw + 1.
 
-          " Adds the FW event
-          lv_fwcount = lv_fwcount + 1.
+            " Adds the FW event
+            lv_fwcount = lv_fwcount + 1.
+         ENDIF.
+         MODIFY lt_fw FROM wa_row INDEX wa_row-client_id.
        ENDIF.
-       MODIFY lt_fw FROM wa_row.
      ENDIF.
-    ENDSELECT.
   ENDDO.
 
   " FOR EACH ORDPRODUCT
@@ -127,16 +132,23 @@ FORM calcule_counts CHANGING cv_count_fw TYPE zst_stats-COUNT_FW
      IF sy-subrc <> 0.
        wa_row2-prod_id = wa_zordp-prod_id.
        wa_row2-prod_quantity = wa_zordp-prod_quantity.
-       INSERT wa_row2 INTO lt_prod.
+
+       PERFORM search_product USING wa_row2-prod_id
+                              CHANGING wa_zprod.
+       wa_row2-prod_name = wa_zprod-prod_name.
+
+       INSERT wa_row2 INTO TABLE lt_prod.
      ELSE.
        wa_row2-prod_quantity = wa_row2-prod_quantity + wa_zordp-prod_quantity.
-       MODIFY lt_prod FROM wa_row2.
+       MODIFY lt_prod FROM wa_row2 INDEX wa_row2-prod_id.
      ENDIF.
      IF wa_row2-prod_quantity > lv_max_quantity.
-       lv_best_seller = wa_row2-prod_id.
+       lv_best_seller = wa_row2-prod_name.
+       lv_max_quantity = wa_row2-prod_quantity.
      ENDIF.
      IF wa_row2-prod_quantity < lv_min_quantity.
-       lv_worst_seller = wa_row2-prod_id.
+       lv_worst_seller = wa_row2-prod_name.
+       lv_min_quantity = wa_row2-prod_quantity.
      ENDIF.
   ENDLOOP.
 

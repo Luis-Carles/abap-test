@@ -117,7 +117,7 @@ START-OF-SELECTION.
     PERFORM calcule_unitary_stats CHANGING ls_stats.
 
     CALL FUNCTION 'ZMAIN_DISPLAY_USTATS'
-              IMPORTING ip_stats = ls_stats.
+              EXPORTING IP_STATS = ls_stats.
   ENDIF.
 
   IF p_name IS NOT INITIAL.

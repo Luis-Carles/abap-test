@@ -104,51 +104,18 @@ MODULE user_command_225 INPUT.
 ENDMODULE.
 
 " PAI for screen_230 CLIENT ACTIONS MENU
-MODULE f4_aproduct_list INPUT.
-  DATA: lt_return TYPE TABLE OF ddshretval,
-        ls_return TYPE ddshretval,
-        lt_f4_tab TYPE TABLE OF dfies,
-        ls_f4_tab TYPE dfies.
-
-  CLEAR lt_f4_tab.
-  ls_f4_tab-fieldname = 'PROD_NAME'.
-  APPEND ls_f4_tab TO lt_f4_tab.
-  " gt_aproducts has STRING attributes: change to CHAR
-  " DOING!
-  CALL FUNCTION 'F4IF_INT_TABLE_VALUE_REQUEST'
-    EXPORTING
-      retfield        = 'PROD_NAME'
-      dynpprog        = sy-repid
-      dynpnr          = sy-dynnr
-      dynprofield     = 'WA_SPRODUCT-PROD_NAME'
-      value_org       = 'S'
-    TABLES
-      value_tab       = gt_aproducts
-      return_tab      = lt_return
-      field_tab       = lt_f4_tab
-    EXCEPTIONS
-      parameter_error = 1
-      no_values_found = 2
-      OTHERS          = 3.
-  IF sy-subrc = 0.
-    READ TABLE lt_return INTO ls_return INDEX 1.
-    IF sy-subrc = 0.
-      READ TABLE gt_aproducts INTO wa_sproduct
-        WITH KEY prod_name = ls_return-fieldval.
-      wa_sproduct-prod_name = ls_return-fieldval.
-    ENDIF.
-  ENDIF.
-ENDMODULE.
-
 MODULE retrieve_input_values_230 INPUT.
   MOVE: wa_sproduct-prod_name TO wa_sproduct-prod_name,
         wa_sproduct-prod_quantity TO wa_sproduct-prod_quantity,
         gv_payment_method TO gv_payment_method.
 
-  DATA: wa_desired_product TYPE ty_product.
-  PERFORM search_product_by_name USING wa_sproduct-prod_name
-                            CHANGING wa_desired_product.
-        wa_sproduct-prod_id = wa_desired_product-prod_id.
+*  DATA: wa_desired_product TYPE ty_product.
+*  PERFORM search_product_by_name USING wa_sproduct-prod_name
+*                            CHANGING wa_desired_product.
+*        wa_sproduct-prod_id = wa_desired_product-prod_id.
+  PERFORM find_prod_id_230 USING wa_sproduct-prod_name
+                           CHANGING wa_sproduct-prod_id.
+
   MOVE: wa_sproduct-prod_id TO wa_sproduct-prod_id.
 ENDMODULE.
 
@@ -157,12 +124,14 @@ MODULE user_command_230 INPUT.
     WHEN 'ADD_PRODUCT'.
       "-----ORDERING (Adding products to order)--------
       IF wa_sproduct-prod_id IS NOT INITIAL.
-        DATA: ov_prod_id TYPE int2,
-              ov_prod_quantity TYPE i.
-        ov_prod_id = wa_sproduct-prod_id.
-        ov_prod_quantity = wa_sproduct-prod_quantity.
+*        DATA: ov_prod_id TYPE int2,
+*              ov_prod_quantity TYPE i.
+*        ov_prod_id = wa_sproduct-prod_id.
+*        ov_prod_quantity = wa_sproduct-prod_quantity.
+*
+*        lo_order->add_product( iv_prod_id = ov_prod_id iv_quantity = ov_prod_quantity ).
+        PERFORM add_product_230.
 
-        lo_order->add_product( iv_prod_id = ov_prod_id iv_quantity = ov_prod_quantity ).
         lo_order->calculate_total( ).
         APPEND wa_sproduct TO gt_order_products.
         CLEAR wa_sproduct.
@@ -228,12 +197,13 @@ MODULE retrieve_input_values_310 INPUT.
   " Current values of the product
   MOVE: wa_eproduct-prod_name TO wa_eproduct-prod_name.
 
-  DATA: wa_desired TYPE ty_product.
-  PERFORM search_product_by_name USING wa_eproduct-prod_name
-                            CHANGING wa_desired.
-  wa_eproduct-prod_id = wa_desired-prod_id.
-  wa_eproduct-prod_quantity = wa_desired-prod_quantity.
-  wa_eproduct-prod_price = wa_desired-prod_price.
+*  DATA: wa_desired TYPE ty_product.
+*  PERFORM search_product_by_name USING wa_eproduct-prod_name
+*                            CHANGING wa_desired.
+*  wa_eproduct-prod_id = wa_desired-prod_id.
+*  wa_eproduct-prod_quantity = wa_desired-prod_quantity.
+*  wa_eproduct-prod_price = wa_desired-prod_price.
+  PERFORM find_product_310.
 
   MOVE: wa_eproduct-prod_id TO wa_eproduct-prod_id,
         wa_eproduct-prod_quantity TO wa_eproduct-prod_quantity,
@@ -251,25 +221,26 @@ MODULE user_command_310 INPUT.
   CASE sy-ucomm.
     WHEN 'UPDATE_STOCK'.
       IF wa_eproduct-prod_name IS NOT INITIAL.
-        DATA: lv_product TYPE zproducts.
-        lv_product-prod_id = wa_eproduct-prod_id.
-        lv_product-prod_name = wa_eproduct-prod_name.
-        lv_product-prod_quantity = wa_eproduct-prod_quantity.
-        lv_product-prod_price = wa_eproduct-prod_price.
-
-      "------ UPDATE STOCK (Update product name/price/quantity)------
-        IF wa_nproduct-prod_name IS NOT INITIAL.
-          lv_product-prod_name = wa_nproduct-prod_name.
-          PERFORM update_product USING lv_product.
-        ENDIF.
-        IF wa_nproduct-prod_price IS NOT INITIAL.
-          lv_product-prod_price = wa_nproduct-prod_price.
-          PERFORM update_product USING lv_product.
-        ENDIF.
-        IF wa_nproduct-prod_quantity IS NOT INITIAL.
-          lv_product-prod_quantity = wa_nproduct-prod_quantity.
-          PERFORM update_product USING lv_product.
-        ENDIF.
+*        DATA: lv_product TYPE zproducts.
+*        lv_product-prod_id = wa_eproduct-prod_id.
+*        lv_product-prod_name = wa_eproduct-prod_name.
+*        lv_product-prod_quantity = wa_eproduct-prod_quantity.
+*        lv_product-prod_price = wa_eproduct-prod_price.
+*
+*      "------ UPDATE STOCK (Update product name/price/quantity)------
+*        IF wa_nproduct-prod_name IS NOT INITIAL.
+*          lv_product-prod_name = wa_nproduct-prod_name.
+*          PERFORM update_product USING lv_product.
+*        ENDIF.
+*        IF wa_nproduct-prod_price IS NOT INITIAL.
+*          lv_product-prod_price = wa_nproduct-prod_price.
+*          PERFORM update_product USING lv_product.
+*        ENDIF.
+*        IF wa_nproduct-prod_quantity IS NOT INITIAL.
+*          lv_product-prod_quantity = wa_nproduct-prod_quantity.
+*          PERFORM update_product USING lv_product.
+*        ENDIF.
+        PERFORM update_stock_310.
 
         CALL SCREEN 315. " Employee Correct Update Screen
       ELSE.
@@ -310,14 +281,16 @@ MODULE user_command_320 INPUT.
          wa_nproduct-prod_quantity IS NOT INITIAL AND
          wa_nproduct-prod_price IS NOT INITIAL.
 
-        DATA: ov_name_char TYPE zproducts-prod_name,
-              ov_quantity_quan TYPE zproducts-prod_quantity,
-              ov_price_dec TYPE zproducts-prod_price.
-        ov_name_char = wa_nproduct-prod_name.
-        ov_quantity_quan = wa_nproduct-prod_quantity.
-        ov_price_dec = wa_nproduct-prod_price.
+*        DATA: ov_name_char TYPE zproducts-prod_name,
+*              ov_quantity_quan TYPE zproducts-prod_quantity,
+*              ov_price_dec TYPE zproducts-prod_price.
+*        ov_name_char = wa_nproduct-prod_name.
+*        ov_quantity_quan = wa_nproduct-prod_quantity.
+*        ov_price_dec = wa_nproduct-prod_price.
+*
+*        PERFORM add_new_product USING ov_name_char ov_quantity_quan ov_price_dec.
+        PERFORM add_product_320.
 
-        PERFORM add_new_product USING ov_name_char ov_quantity_quan ov_price_dec.
         CALL SCREEN 325. " Employee Correct Addition Screen
       ELSE.
         MESSAGE: 'Error: The three fields are mandatory for the new product.' TYPE 'E'.
