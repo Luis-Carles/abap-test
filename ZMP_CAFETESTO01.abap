@@ -94,7 +94,7 @@ MODULE retrieve_product_315 OUTPUT.
 *  wa_eproduct-prod_name = ls_updated_product-prod_name.
 *  wa_eproduct-prod_quantity = ls_updated_product-prod_quantity.
 *  wa_eproduct-prod_price = ls_updated_product-prod_price.
-  PERFORM collect_product_315.
+  PERFORM collect_product_315 CHANGING wa_eproduct.
 ENDMODULE.
 
 MODULE retrieve_product_325 OUTPUT.
@@ -109,7 +109,7 @@ MODULE retrieve_product_325 OUTPUT.
 *  wa_nproduct-prod_name = ls_new_product-prod_name.
 *  wa_nproduct-prod_quantity = ls_new_product-prod_quantity.
 *  wa_nproduct-prod_price = ls_new_product-prod_price.
-  PERFORM collect_product_325.
+  PERFORM collect_product_325 CHANGING wa_nproduct.
 ENDMODULE.
 
 MODULE retrieve_stats OUTPUT.
@@ -134,5 +134,5 @@ MODULE retrieve_stats OUTPUT.
 *  ELSE.
 *    MESSAGE 'Error when trying to retrieve statistics.' TYPE 'E'.
 *  ENDIF.
-  PERFORM collect_stats_330.
+  PERFORM collect_stats_330 CHANGING gs_stats gv_user gv_date gv_time.
 ENDMODULE.

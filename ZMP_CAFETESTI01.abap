@@ -107,7 +107,8 @@ ENDMODULE.
 MODULE retrieve_input_values_230 INPUT.
   MOVE: wa_sproduct-prod_name TO wa_sproduct-prod_name,
         wa_sproduct-prod_quantity TO wa_sproduct-prod_quantity,
-        gv_payment_method TO gv_payment_method.
+        gv_payment_method TO gv_payment_method,
+        gv_order_total TO gv_order_total.
 
 *  DATA: wa_desired_product TYPE ty_product.
 *  PERFORM search_product_by_name USING wa_sproduct-prod_name
@@ -130,9 +131,11 @@ MODULE user_command_230 INPUT.
 *        ov_prod_quantity = wa_sproduct-prod_quantity.
 *
 *        lo_order->add_product( iv_prod_id = ov_prod_id iv_quantity = ov_prod_quantity ).
-        PERFORM add_product_230.
+*        lo_order->calculate_total( ).
+        PERFORM add_product_230 USING wa_sproduct
+                                CHANGING lo_order.
 
-        lo_order->calculate_total( ).
+        gv_order_total = lo_order->get_total( ).
         APPEND wa_sproduct TO gt_order_products.
         CLEAR wa_sproduct.
       ELSE.
@@ -167,7 +170,7 @@ MODULE user_command_290 INPUT.
       CLEAR wa_lorder_date.
       gv_payment_method = 'Credit Card'.
       CLEAR wa_sproduct.
-      CLEAR gt_aproducts.
+      CLEAR gv_order_total.
       CLEAR gt_order_products.
 
       CALL SCREEN 100.
@@ -203,7 +206,7 @@ MODULE retrieve_input_values_310 INPUT.
 *  wa_eproduct-prod_id = wa_desired-prod_id.
 *  wa_eproduct-prod_quantity = wa_desired-prod_quantity.
 *  wa_eproduct-prod_price = wa_desired-prod_price.
-  PERFORM find_product_310.
+  PERFORM find_product_310 CHANGING wa_eproduct.
 
   MOVE: wa_eproduct-prod_id TO wa_eproduct-prod_id,
         wa_eproduct-prod_quantity TO wa_eproduct-prod_quantity,
@@ -240,7 +243,7 @@ MODULE user_command_310 INPUT.
 *          lv_product-prod_quantity = wa_nproduct-prod_quantity.
 *          PERFORM update_product USING lv_product.
 *        ENDIF.
-        PERFORM update_stock_310.
+        PERFORM update_stock_310 USING wa_eproduct wa_nproduct.
 
         CALL SCREEN 315. " Employee Correct Update Screen
       ELSE.
@@ -289,7 +292,7 @@ MODULE user_command_320 INPUT.
 *        ov_price_dec = wa_nproduct-prod_price.
 *
 *        PERFORM add_new_product USING ov_name_char ov_quantity_quan ov_price_dec.
-        PERFORM add_product_320.
+        PERFORM add_product_320 USING wa_nproduct.
 
         CALL SCREEN 325. " Employee Correct Addition Screen
       ELSE.

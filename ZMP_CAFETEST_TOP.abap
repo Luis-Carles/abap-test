@@ -21,11 +21,12 @@ DATA: wa_sclient TYPE ty_client,
       wa_nproduct TYPE ty_product,
       gv_payment_method TYPE string VALUE 'Credit Card',
       wa_lorder_date TYPE zcorders-order_date,
-      gt_aproducts  TYPE TABLE OF ty_product,
+
+*-------current order product list DOING!!----------------
       gt_order_products TYPE TABLE OF ty_product,
+*-------------------------------------------------------
+      gv_order_total TYPE ty_price,
       gs_stats TYPE ZST_STATS,
-      gv_best_seller TYPE zproducts-prod_name,
-      gv_worst_seller TYPE zproducts-prod_name,
       gv_user TYPE sy-uname,
       gv_date TYPE DATS,
       gv_time TYPE TIMS.
@@ -34,3 +35,6 @@ DATA: wa_sclient TYPE ty_client,
 DATA: lo_client_fan TYPE REF TO lcl_client,
       lo_order TYPE REF TO lcl_order,
       lo_handler TYPE REF TO lcl_fourth_wing_handler.
+
+" -Change wa---->gs
+" DOING!!

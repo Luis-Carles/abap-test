@@ -35,5 +35,6 @@ DATA: it_products TYPE SORTED TABLE OF ty_product
       it_clients TYPE SORTED TABLE OF ty_client
                     WITH UNIQUE KEY client_id.
 
-" STRUCTURES AND INTERNAL TABLES FEEDBACK
+" -CHANGE it -----> gt
+" -STRUCTURES AND INTERNAL TABLES FEEDBACK
 " DOING!!
