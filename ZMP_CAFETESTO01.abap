@@ -30,18 +30,6 @@ MODULE status_230 OUTPUT.
   SET PF-STATUS 'CLIENT_MENU'.
 ENDMODULE.
 
-MODULE create_order_230 OUTPUT.
-  IF lo_order IS INITIAL.
-    lo_order = NEW lcl_order( iv_payment_method = gv_payment_method
-                              iv_o_client       = lo_client_fan ).
-
-    lo_handler = NEW lcl_fourth_wing_handler( ).
-
-    " Link event possible raiser to the handler
-    SET HANDLER lo_handler->on_fourth_wing FOR lo_order.
-  ENDIF.
-ENDMODULE.
-
 MODULE status_290 OUTPUT.
   SET PF-STATUS 'FINAL-GREETINGS'.
 ENDMODULE.
@@ -68,6 +56,18 @@ ENDMODULE.
 
 MODULE status_330 OUTPUT.
   SET PF-STATUS 'EMPLOYEE_STATS'.
+ENDMODULE.
+
+MODULE create_order_230 OUTPUT.
+  IF lo_order IS INITIAL.
+    lo_order = NEW lcl_order( iv_payment_method = gv_payment_method
+                              iv_o_client       = lo_client_fan ).
+
+    lo_handler = NEW lcl_fourth_wing_handler( ).
+
+    " Link event possible raiser to the handler
+    SET HANDLER lo_handler->on_fourth_wing FOR lo_order.
+  ENDIF.
 ENDMODULE.
 
 MODULE retrieve_client OUTPUT.
