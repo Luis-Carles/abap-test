@@ -236,6 +236,18 @@ REPORT ZCAFETEST_README.
 
 *   .....................
 
+* _____________ZMP_MANAGEMENT:______________________________
+* GRID ALV based Screen Module program for CAFETEST It includes ZMP_CAFETEST_TOP
+*                                                 ZMP_CAFETEST_O01
+*                                                 ZMP_CAFETEST_I01
+*
+*
+
+
+
+
+*   .....................
+
 * _____________ZVALIDATE_QUANTITIES:______________________________
 * Legacy and alpha version of CAFETEST.
 * It includes code snippets of versions 0.0.0 to 0.0.9 without any
@@ -311,7 +323,7 @@ REPORT ZCAFETEST_README.
 
 * -ZMP_CAFETEST_TOP:
 *     |
-*     |_Includes: ZMAIN_TOP, ZMAIN_CLS, ZMAIN_F02, ZMAIN_F03
+*     |_Includes: ZMAIN_TOP, ZMAIN_CLS, ZMAIN_F02, ZMP_CAFETEST_F01
 *     |
 *     |_DB. Tables: X.
 *     |
@@ -557,12 +569,12 @@ REPORT ZCAFETEST_README.
 
 *   .....................
 
-* -ZMAIN_F03: Contains every subroutine related to solve the global
-* variable's naming within PBO/PAI include programs in the screen
-* module program ZMP_CAFETEST. SAP considers every declared variable
-* in those includes as a global variable as if they were in the TOP
-* include program. For taking care of this matter, every method that
-* creates new data or structures has been stored in a subroutine
+* -ZMP_CAFETEST_F01: Contains every subroutine related to solve the
+* global variable's naming within PBO/PAI include programs in the
+* screen module program ZMP_CAFETEST. SAP considers every declared
+* variablein those includes as a global variable as if they were in
+* the TOPinclude program. For taking care of this matter, every method
+* that creates new data or structures has been stored in a subroutine
 * inside ZMAIN_F03. Nonetheless, the majority of these declarations
 * were mandatory in the first place either to handle typing problems
 * or to avoid changing the global variables directly.
