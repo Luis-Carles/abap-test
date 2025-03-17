@@ -2,20 +2,38 @@
 *&  Include           ZMANAGEMENT_ALV
 *&---------------------------------------------------------------------*
 
-" Container and grid
-DATA: go_dcon  TYPE REF TO cl_gui_docking_container,
-      go_grid  TYPE REF TO cl_gui_alv_grid,
-      gv_extension    TYPE I VALUE 2000.
+"_________________________________________________
+" ALV Objects
+DATA: go_dcontainer    TYPE REF TO cl_gui_docking_container,
+      go_grid          TYPE REF TO cl_gui_alv_grid.
 
-" Function ALV custom layout and fieldcat
-DATA : gs_layout    TYPE slis_layout_alv,
-       gs_fieldcat  TYPE slis_fieldcat_alv.
+"_________________________________________________
+" SLIS ALV Structures
+DATA: gt_fieldcat_slis TYPE slis_t_fieldcat_alv.
 
-" GRID (ALV) custom layyout and fieldcat
-DATA : gs_lvc_layout  TYPE lvc_s_layo,
-       gs_lvc_fcat    TYPE lvc_s_fcat,
-       gt_lvc_fcat    TYPE lvc_t_fcat,
-       gt_lvc_sort    TYPE lvc_t_sort,
-       gs_lvc_sort       TYPE lvc_s_sort,
-       gs_alv_cellstyle   TYPE lvc_s_styl,
-       gs_alv_cellcol    TYPE lvc_s_scol.
+"_________________________________________________
+" LVC Structures
+DATA: gs_scroll        TYPE lvc_s_stbl,
+      gs_layout        TYPE lvc_s_layo,
+      gt_fieldcat      TYPE lvc_t_fcat,
+      gs_fieldcat      TYPE lvc_s_fcat,
+      gt_toolbar_ex    TYPE ui_functions.
+
+"_________________________________________________
+" Event Handler
+*CLASS lcl_handler DEFINITION.
+*  PUBLIC SECTION.
+*    METHODS: when_user_command FOR EVENT user_command OF cl_gui_alv_grid
+*      IMPORTING e_ucomm.
+*ENDCLASS.
+*
+*CLASS lcl_handler IMPLEMENTATION.
+*    METHOD when_user_command.
+*      CASE e_ucomm.
+*        WHEN 'ZREFRESH'.
+*           PERFORM refresh_grid_alv.
+*      ENDCASE.
+*    ENDMETHOD.
+*ENDCLASS.
+*
+*DATA: go_handler TYPE REF TO lcl_handler.

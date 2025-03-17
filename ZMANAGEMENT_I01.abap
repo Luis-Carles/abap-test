@@ -2,8 +2,14 @@
 *&  Include           ZMANAGEMENT_I01
 *&---------------------------------------------------------------------*
 
+"____________________________________________________________________
+"_________DISPLAY VIEW____________________________________________
+"____________________________________________________________________
 MODULE user_command_100 INPUT.
-  CASE sy-ucomm.
+  CLEAR gv_code.
+  gv_code = ok_code.
+
+  CASE gv_code.
     WHEN 'DELETE'.
       " DOING!
       PERFORM refresh_grid.
@@ -13,14 +19,35 @@ MODULE user_command_100 INPUT.
     WHEN 'REFRESH'.
       " DOING!
       PERFORM refresh_grid.
-    WHEN 'EXIT'.
-      " DOING!
-      PERFORM refresh_grid.
+
   ENDCASE.
 ENDMODULE.
 
+MODULE exit_command_100 INPUT.
+  CLEAR gv_code.
+  gv_code = ok_code.
+  CLEAR ok_code.
+
+  CASE gv_code.
+    WHEN 'BACK' OR 'CANCEL'.
+      " DOING!!
+      LEAVE TO SCREEN 0.
+
+    WHEN 'EXIT'.
+      " DOING!
+      LEAVE PROGRAM.
+
+  ENDCASE.
+ENDMODULE.
+
+"____________________________________________________________________
+"_________MANAGEMENT VIEW____________________________________________
+"____________________________________________________________________
 MODULE user_command_200 INPUT.
-  CASE sy-ucomm.
+  CLEAR gv_code.
+  gv_code = ok_code.
+
+  CASE gv_code.
     WHEN 'DELETE'.
       " DOING!
       PERFORM refresh_grid.
@@ -30,8 +57,23 @@ MODULE user_command_200 INPUT.
     WHEN 'REFRESH'.
       " DOING!
       PERFORM refresh_grid.
+
+  ENDCASE.
+ENDMODULE.
+
+MODULE exit_command_200 INPUT.
+  CLEAR gv_code.
+  gv_code = ok_code.
+  CLEAR ok_code.
+
+  CASE gv_code.
+    WHEN 'BACK' OR 'CANCEL'.
+      " DOING!!
+      LEAVE TO SCREEN 0.
+
     WHEN 'EXIT'.
       " DOING!
-      PERFORM refresh_grid.
+      LEAVE PROGRAM.
+
   ENDCASE.
 ENDMODULE.

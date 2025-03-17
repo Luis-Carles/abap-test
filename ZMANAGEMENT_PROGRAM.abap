@@ -10,8 +10,23 @@ REPORT ZMANAGEMENT_PROGRAM.
 " ALV class import
 INCLUDE <CL_ALV_CONTROL>.
 
+" Tables & Data import
+INCLUDE ZMAIN_TOP.
+
+" Classes & Soubroutines (ZMAIN_F01) import
+INCLUDE ZMAIN_CLS.
+
 " DB. Tables, global structures, internal tables import
 INCLUDE ZMANAGEMENT_TOP.
+
+" AlV custom Control variables import
+INCLUDE ZMANAGEMENT_ALV.
+
+" Screen-Selection input parameters import
+INCLUDE ZMANAGEMENT_SCR.
+
+" Soubroutines import
+INCLUDE ZMANAGEMENT_F01.
 
 " PBO Modules import
 INCLUDE ZMANAGEMENT_O01.
@@ -19,48 +34,32 @@ INCLUDE ZMANAGEMENT_O01.
 " PAI Modules import
 INCLUDE ZMANAGEMENT_I01.
 
-" Screen-Selection input parameters import
-INCLUDE ZMANAGEMENT_SCR.
-
 INITIALIZATION.
-  p_exec = 'Proceed'.
 
 AT SELECTION-SCREEN OUTPUT.
-  PERFORM initialize_listboxs.
 
 AT SELECTION-SCREEN.
-  " Table selection input check
-  IF p_table IS INITIAL.
-    MESSAGE 'Please select a Database table.' TYPE 'E'.
+  " View mode Selection radiobutton
+  IF r_dis = 'X'.
+    gv_mode = 'D'.
+  ELSEIF r_mng = 'X'.
+    gv_mode = 'M'.
   ENDIF.
 
-  " DISPLAY / MANAGEMENT mode input check
-  IF p_mode IS INITIAL.
-    MESSAGE 'Please select one access mode' TYPE 'E'.
+  " Search approach Selection radiobutton
+  IF r_ndyn = 'X'.
+    gv_approach = 'ND'.
+  ELSEIF r_mng = 'X'.
+    gv_approach = 'DY'.
   ENDIF.
-
-  " Button actions logic
-  CASE sy-ucomm.
-    WHEN 'START_EXEC'.
-         LEAVE TO SCREEN 0.
-  ENDCASE.
 
 START-OF-SELECTION.
-  CASE p_table.
-    WHEN 'ZCLIENTS'.
-      PERFORM get_clients.
-    WHEN 'ZPRODUCTS'.
-      PERFORM get_products.
-    WHEN 'ZCORDERS'.
-      PERFORM get_corders.
-    WHEN 'ZORDPRODUCTS'.
-      PERFORM get_ordproducts.
-  ENDCASE.
+  PERFORM search_order_list.
 
 END-OF-SELECTION.
-  CASE p_mode.
-    WHEN 'DISP'.
+  CASE gv_mode.
+    WHEN 'D'.
       CALL SCREEN 100.
-    WHEN 'MNG'.
+    WHEN 'M'.
       CALL SCREEN 200.
   ENDCASE.
