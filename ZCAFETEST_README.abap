@@ -34,8 +34,10 @@ REPORT ZCAFETEST_README.
 * | CLIENT_NAME      |   | TOTAL            |   | PROD_NAME        |
 * | CLIENT_LAST_NAME |   | ORDER_DATE       |   | PROD_QUANTITY    |
 * | ORDER_COUNT      |   | ORDER_CLIENT (FK)|   | PROD_PRICE       |
-* |                  |   |       . . .      |   |                  |
-* +------------------+   +------------------+   +------------------+
+* +------------------+   | PAYMENT_METHOD   |   | WAERS (Currency) |
+*           |            | ORDER_TIME       |   | MEINS (Unit)     |
+*           |            | WAERS (Currency) |   +------------------+
+*           |            +------------------+             |
 *           |                  |   |                      |
 *           |________1 : n_____|   |                      |
 *                                  |                      |
@@ -236,15 +238,20 @@ REPORT ZCAFETEST_README.
 
 *   .....................
 
-* _____________ZMP_MANAGEMENT:______________________________
-* GRID ALV based Screen Module program for CAFETEST It includes ZMP_CAFETEST_TOP
-*                                                 ZMP_CAFETEST_O01
-*                                                 ZMP_CAFETEST_I01
-*
-*
+* _____________ZMANAGEMENT_PROGRAM:______________________________
+* GRID ALV based Screen Module program for CAFETEST.
+*                                      It includes ZMAIN_TOP
+*                                                  ZMAIN_CLS
+*                                                  ZMANAGEMENT_O01
+*                                                  ZMANAGEMENT_TOP
+*                                                  ZMANAGEMENT_ALV
+*                                                  ZMANAGEMENT_SCR
+*                                                  ZMANAGEMENT_F01
+*                                                  ZMANAGEMENT_O01
+*                                                  ZMANAGEMENT_I01
 
-
-
+* Screen 100 ------> Display View
+* Screen 200 ------> Management View
 
 *   .....................
 
@@ -269,17 +276,17 @@ REPORT ZCAFETEST_README.
 
 * -----------Includes and Modularization:
 
-*  ZMAIN_PROGRAM                ZMP_CAFETEST
-*     |                      _     |
-*     |__ZMAIN_TOP            }    |__ZMP_CAFETEST_TOP
-*     |                       }____|_______|
-*     |__ZMAIN_CLS            }    |
-*     |    |                  }    |
-*     |    |__ZMAIN_F01       }    |__ZMAIN_F03
-*     |                       }    |
-*     |__ZMAIN_F02           _}    |
-*     |                            |__ZMP_CAFETEST_O01
-*     |__ZMAIN_SCR                 |__ZMP_CAFETEST_I01
+* ZMANAGEMENT_PROGRAM       ZMAIN_PROGRAM                ZMP_CAFETEST
+* |                    _    |                      _     |
+* |__ZMANAGEMENT_TOP  {     |__ZMAIN_TOP            }    |__ZMP_CAFETEST_TOP
+* |       |__________ {     |                       }____|_______|
+* |                   {     |__ZMAIN_CLS            }    |
+* |__ZMANAGEMENT_ALV  {     |    |                  }    |
+* |__ZMANAGEMENT_F01  {_    |    |__ZMAIN_F01       }    |__ZMAIN_F03
+* |                         |                       }    |
+* |__ZMANAGEMENT_O01        |__ZMAIN_F02           _}    |
+* |__ZMANAGEMENT_I01        |                            |__ZMP_CAFETEST_O01
+* |__ZMANAGEMENT_SCR        |__ZMAIN_SCR                 |__ZMP_CAFETEST_I01
 
 
 * ________Global Variables and Type Declarations:________________
