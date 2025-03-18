@@ -114,10 +114,12 @@ FORM make_data.
       gs_result-REG_STATUS = 'Sporadic Client'.
     ENDIF.
 
+    gs_result-COLOR = gt_colors.
+
     IF lv_del = ''.
       MODIFY gt_results FROM gs_result
       TRANSPORTING CLIENT_NAME CLIENT_LAST_NAME ORDER_COUNT
-                   REG_STATUS PROD_NAME PROD_STOCK PROD_PRICE.
+                   REG_STATUS PROD_NAME PROD_STOCK PROD_PRICE COLOR.
     ENDIF.
   ENDLOOP.
 
@@ -255,6 +257,7 @@ FORM search_order_list.
 
   IF lv_client_mlines  > 0 AND
      lv_product_mlines > 0.
+    PERFORM custom_colors.
     PERFORM make_data.
   ENDIF.
 
@@ -289,8 +292,10 @@ FORM create_grid.
     EXCEPTIONS
       others   = 1.
 
-*  CREATE OBJECT go_handler.             " Handler for custom sy-ucomm values
-*  SET HANDLER go_handler->when_user_command FOR go_grid.
+*  IF gv_mode = 'M'.
+*    CREATE OBJECT go_handler.             " Handler for custom sy-ucomm values
+*    SET HANDLER go_handler->when_toolbar      FOR go_grid.
+*  ENDIF.
 
   IF sy-subrc <> 0.
     MESSAGE: 'Error Creating the Grid.' TYPE 'E'.
@@ -386,14 +391,157 @@ FORM create_layout.
   gs_layout-cwidth_opt        = 'X'.         " Column-width optimizing
   gs_layout-sel_mode          = 'A'.         " Selection Mode
   gs_layout-no_toolbar        = ''.          " Enable Toolbar
+  gs_layout-CTAB_FNAME        = 'COLOR'.
 
   CASE gv_mode.
     WHEN 'D'.
-      gs_layout-grid_title        = 'Display View'.
+      gs_layout-grid_title        = 'Overall Display View'.
 
     WHEN 'M'.
-      gs_layout-grid_title        = 'Management View'.
+      gs_layout-grid_title        = 'Overall Management View'.
+      gs_layout-edit              = 'X'.
   ENDCASE.
+ENDFORM.
+
+" Subroutine that customizes the color for each field.
+FORM custom_colors.
+  CLEAR gt_colors.
+
+  " (ORDER_ID)
+  CLEAR gs_color.
+  gs_color-fname = 'ORDER_ID'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 1.
+  gs_color-nokeycol  = ''.
+  APPEND gs_color TO gt_colors.
+
+  " (ORDER_CLIENT)
+  CLEAR gs_color.
+  gs_color-fname = 'ORDER_CLIENT'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 1.
+  gs_color-nokeycol  = 'X'.
+  APPEND gs_color TO gt_colors.
+
+  " (CLIENT_NAME)
+  CLEAR gs_color.
+  gs_color-fname = 'CLIENT_NAME'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 6.
+  gs_color-nokeycol  = ''.
+  APPEND gs_color TO gt_colors.
+
+  " (CLIENT_LAST_NAME)
+  CLEAR gs_color.
+  gs_color-fname = 'CLIENT_LAST_NAME'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 6.
+  gs_color-nokeycol  = ''.
+  APPEND gs_color TO gt_colors.
+
+  " (ORDER_COUNT)
+  CLEAR gs_color.
+  gs_color-fname = 'ORDER_COUNT'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 6.
+  gs_color-nokeycol  = ''.
+  APPEND gs_color TO gt_colors.
+
+  " (ORDER_DATE)
+  CLEAR gs_color.
+  gs_color-fname = 'ORDER_DATE'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 3.
+  gs_color-nokeycol  = ''.
+  APPEND gs_color TO gt_colors.
+
+  " (ORDER_TIME)
+  CLEAR gs_color.
+  gs_color-fname = 'ORDER_TIME'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 3.
+  gs_color-nokeycol  = ''.
+  APPEND gs_color TO gt_colors.
+
+  " (REG_STATUS)
+  CLEAR gs_color.
+  gs_color-fname = 'REG_STATUS'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 6.
+  gs_color-nokeycol  = ''.
+  APPEND gs_color TO gt_colors.
+
+  " (TOTAL)
+  CLEAR gs_color.
+  gs_color-fname = 'TOTAL'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 3.
+  gs_color-nokeycol  = ''.
+  APPEND gs_color TO gt_colors.
+
+  " (WAERS)
+  CLEAR gs_color.
+  gs_color-fname = 'WAERS'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 7.
+  gs_color-nokeycol  = ''.
+  APPEND gs_color TO gt_colors.
+
+  " (PAYMENT_METHOD)
+  CLEAR gs_color.
+  gs_color-fname = 'PAYMENT_METHOD'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 3.
+  gs_color-nokeycol  = ''.
+  APPEND gs_color TO gt_colors.
+
+  " (PROD_ID)
+  CLEAR gs_color.
+  gs_color-fname = 'PROD_ID'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 1.
+  gs_color-nokeycol  = 'X'.
+  APPEND gs_color TO gt_colors.
+
+  " (PROD_NAME)
+  CLEAR gs_color.
+  gs_color-fname = 'PROD_NAME'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 5.
+  gs_color-nokeycol  = ''.
+  APPEND gs_color TO gt_colors.
+
+  " (PROD_PRICE)
+  CLEAR gs_color.
+  gs_color-fname = 'PROD_PRICE'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 5.
+  gs_color-nokeycol  = ''.
+  APPEND gs_color TO gt_colors.
+
+  " (PROD_QUANTITY)
+  CLEAR gs_color.
+  gs_color-fname = 'PROD_QUANTITY'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 3.
+  gs_color-nokeycol  = ''.
+  APPEND gs_color TO gt_colors.
+
+  " (PROD_STOCK)
+  CLEAR gs_color.
+  gs_color-fname = 'PROD_STOCK'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 5.
+  gs_color-nokeycol  = ''.
+  APPEND gs_color TO gt_colors.
+
+  " (MEINS)
+  CLEAR gs_color.
+  gs_color-fname = 'MEINS'.
+  gs_color-color-int = 0.
+  gs_color-color-col = 7.
+  gs_color-nokeycol  = ''.
+  APPEND gs_color TO gt_colors.
 ENDFORM.
 
 " Subroutine that custom each field inside the Field Catalog
@@ -422,6 +570,9 @@ FORM custom_fieldcat.
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C03.
         gs_fieldcat-col_pos    = 3.
+        IF gv_mode = 'M'.
+          gs_fieldcat-edit = 'X'.
+        ENDIF.
 
       WHEN 'CLIENT_LAST_NAME'.          " Client Last Name
         gs_fieldcat-key        = ''.
@@ -429,6 +580,9 @@ FORM custom_fieldcat.
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C04.
         gs_fieldcat-col_pos    = 4.
+        IF gv_mode = 'M'.
+          gs_fieldcat-edit = 'X'.
+        ENDIF.
 
       WHEN 'ORDER_COUNT'.               " Client Order Count
         gs_fieldcat-key        = ''.
@@ -436,6 +590,9 @@ FORM custom_fieldcat.
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C05.
         gs_fieldcat-col_pos    = 5.
+        IF gv_mode = 'M'.
+          gs_fieldcat-edit = 'X'.
+        ENDIF.
 
       WHEN 'ORDER_DATE'.                " Order Date
         gs_fieldcat-key        = ''.
@@ -443,6 +600,9 @@ FORM custom_fieldcat.
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C06.
         gs_fieldcat-col_pos    = 6.
+        IF gv_mode = 'M'.
+          gs_fieldcat-edit = 'X'.
+        ENDIF.
 
       WHEN 'ORDER_TIME'.               " Order TIme
         gs_fieldcat-key        = ''.
@@ -450,6 +610,9 @@ FORM custom_fieldcat.
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C07.
         gs_fieldcat-col_pos    = 7.
+        IF gv_mode = 'M'.
+          gs_fieldcat-edit = 'X'.
+        ENDIF.
 
       WHEN 'REG_STATUS'.               " Regular Customer Status
         gs_fieldcat-key        = ''.
@@ -464,6 +627,9 @@ FORM custom_fieldcat.
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C09.
         gs_fieldcat-col_pos    = 9.
+        IF gv_mode = 'M'.
+          gs_fieldcat-edit = 'X'.
+        ENDIF.
 
       WHEN 'WAERS'.                    " Currency
         gs_fieldcat-key        = ''.
@@ -478,6 +644,9 @@ FORM custom_fieldcat.
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C11.
         gs_fieldcat-col_pos    = 11.
+        IF gv_mode = 'M'.
+          gs_fieldcat-edit = 'X'.
+        ENDIF.
 
       WHEN 'PROD_ID'.                  " Product Code
         gs_fieldcat-key        = 'X'.
@@ -492,6 +661,9 @@ FORM custom_fieldcat.
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C13.
         gs_fieldcat-col_pos    = 13.
+        IF gv_mode = 'M'.
+          gs_fieldcat-edit = 'X'.
+        ENDIF.
 
       WHEN 'PROD_PRICE'.               " Product Price
         gs_fieldcat-key        = ''.
@@ -499,6 +671,9 @@ FORM custom_fieldcat.
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C14.
         gs_fieldcat-col_pos    = 14.
+        IF gv_mode = 'M'.
+          gs_fieldcat-edit = 'X'.
+        ENDIF.
 
       WHEN 'PROD_QUANTITY'.            " Product Quantity
         gs_fieldcat-key        = ''.
@@ -506,6 +681,9 @@ FORM custom_fieldcat.
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C15.
         gs_fieldcat-col_pos    = 15.
+        IF gv_mode = 'M'.
+          gs_fieldcat-edit = 'X'.
+        ENDIF.
 
       WHEN 'PROD_STOCK'.               " Product Stock
         gs_fieldcat-key        = ''.
@@ -513,6 +691,9 @@ FORM custom_fieldcat.
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C16.
         gs_fieldcat-col_pos    = 16.
+        IF gv_mode = 'M'.
+          gs_fieldcat-edit = 'X'.
+        ENDIF.
 
       WHEN 'MEINS'.                    " Unit
         gs_fieldcat-key        = ''.
@@ -595,9 +776,11 @@ ENDFORM.
 
 " Subroutine that refresh the Grid ALV in Result Screen, searching again
 " and displaying newest information.
-FORM refresh_grid.
-  " Re retrieve data from DB Tables:
-  PERFORM search_order_list.
+FORM refresh_grid USING iv_refind TYPE CHAR1.
+  IF iv_refind = 'X'.
+    " Re retrieve data from DB Tables:
+    PERFORM search_order_list.
+  ENDIF.
 
   " Refresh the grid
   gs_scroll-row = 'X'.
@@ -613,7 +796,7 @@ ENDFORM.
 
 " Subroutine that is triggered from PBO Modules and call in precise order
 " every alv subroutine necessary to perform write requirement
-FORM alv_write_100.
+FORM alv_write.
   IF go_dcontainer IS NOT BOUND.    " Displaying for the first time
     PERFORM create_dcontainer.
     PERFORM create_grid.
@@ -622,12 +805,96 @@ FORM alv_write_100.
     PERFORM custom_toolbar CHANGING gt_toolbar_ex.
     PERFORM display_grid.
   ELSE.
-    PERFORM refresh_grid.       " Refreshing, displaying subsequent times
+    CASE gv_mode.
+      WHEN 'D'.
+         PERFORM refresh_grid USING 'X'. " Refreshing, refind enabled
+
+      WHEN 'M'.
+         PERFORM refresh_grid USING ''.  " Refreshing refind disabled
+    ENDCASE.
   ENDIF.
 ENDFORM.
 
-FORM alv_write_200.
+FORM insert_row.
+  DATA: lv_order_id   TYPE i,
+        lv_client_id  TYPE i,
+        lv_product_id TYPE i.
+  CLEAR gs_result.
+
+  PERFORM next_id USING 'orders'   CHANGING lv_order_id.
+  gs_result-ORDER_ID = lv_order_id.
+  PERFORM next_id USING 'clients'  CHANGING lv_client_id.
+  gs_result-ORDER_CLIENT = lv_client_id.
+  PERFORM next_id USING 'products' CHANGING lv_product_id.
+  gs_result-PROD_ID = lv_product_id.
+
+  gs_result-REG_STATUS = 'Sporadic Client'.
+  gs_result-WAERS      = 'EUR'.
+  gs_result-MEINS      = 'EA'.
+  APPEND gs_result TO gt_results.
+
+ENDFORM.
+
+FORM delete_row.
+  DATA: lt_sel_rows TYPE lvc_t_row,
+        ls_sel_row  TYPE lvc_s_row,
+        lv_answer(1).
+
+  " Get selected row(s)
+  CALL METHOD go_grid->get_selected_rows
+    IMPORTING et_index_rows = lt_sel_rows.
+
+  CALL FUNCTION 'POPUP_TO_CONFIRM'
+    EXPORTING
+      TEXT_QUESTION  = 'Do you really want to delete those rows?'
+      TEXT_BUTTON_1  = 'Yes'
+      TEXT_BUTTON_2  = 'No'
+    IMPORTING
+      ANSWER         = lv_answer
+    EXCEPTIONS
+      TEXT_NOT_FOUND = 1
+      OTHERS         = 2.
+
+  CHECK lv_answer = 1.
+
+  LOOP AT lt_sel_rows INTO ls_sel_row.
+    " ACTIONS AT DB TABLE
+    " DOING!!
+    DELETE gt_results INDEX ls_sel_row-index.
+  ENDLOOP.
+
+  MESSAGE 'Rows deleted' TYPE 'S'.
+ENDFORM.
+
+" Subroutine that check any input values for new rows prior to
+" save those changes in the DB tables.
+FORM validate_check.
+
   "DOING!!
+ENDFORM.
+
+" Subroutine that save changes into the Internal and DB tables.
+FORM save_changes.
+  PERFORM validate_check.
+
+  IF sy-subrc = 0.
+  " ACTIONS AT DB TABLE
+  "  MODIFY zproducts FROM TABLE gt_results.
+  "  MODIFY zclients
+  "  MODIFY zcorders
+  "  MODIFY zordproducts
+    "DOING!!
+
+    IF sy-subrc <> 0.
+      ROLLBACK WORK.
+      MESSAGE 'Error while saving' TYPE 'E'.
+    ELSE.
+    COMMIT WORK AND WAIT.
+    MESSAGE 'Changes saved successfully' TYPE 'S'.
+    ENDIF.
+
+  ENDIF.
+
 ENDFORM.
 
 " Subroutine that liberates memory and clears alv variables / objects
