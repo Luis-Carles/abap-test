@@ -2,6 +2,12 @@
 *&  Include           ZMANAGEMENT_TOP
 *&---------------------------------------------------------------------*
 
+" Datatables import
+TABLES: zclients,
+        zcorders,
+        zordproducts,
+        zproducts.
+
 "_______________________________________________________________________
 " Global variables
 " VIEW MODE:        D: Display
@@ -22,20 +28,22 @@ DATA: gv_mode       TYPE CHAR1 VALUE 'D',  " View Mode
       gv_where_cl   TYPE string,
       gv_where_pr   TYPE string,
       gv_code       TYPE sy-ucomm,         " Global variables to avoid
-      ok_code       TYPE sy-ucomm.         " messing with sy-ucomm
+      ok_code       TYPE sy-ucomm,         " messing with sy-ucomm
+      gv_check      TYPE STA_TEXT.         " Check input flag
 
 "_______________________________________________________________________
 " Internal tables and Structures Declaration
 DATA: gt_results      TYPE TABLE OF ZST_RESULT, " Results structure
-      gs_result       TYPE ZST_RESULT.          " Results line
+      gs_result       TYPE ZST_RESULT,          " Results line
 *      gt_zclients     TYPE TABLE OF zclients,
-*      gs_zclients     TYPE zclients,
+      gs_zclient      TYPE zclients,
 *      gt_zproducts    TYPE TABLE OF zproducts,
-*      gs_zproducts    TYPE zproducts,
+      gs_zproduct     TYPE zproducts,
 *      gt_zcorders     TYPE TABLE OF zcorders,
-*      gs_zcorders     TYPE zcorders,
+      gs_zcorder      TYPE zcorders,
 *      gt_zordproducts TYPE TABLE OF zordproducts,
-*      gs_zordproducts TYPE zordproducts.
+      gs_zordproduct  TYPE zordproducts.
+
 "_______________________________________________________________________
 " Master Data tables
 DATA: BEGIN OF gt_master_clients OCCURS 0,  " Master Equipment for Clients

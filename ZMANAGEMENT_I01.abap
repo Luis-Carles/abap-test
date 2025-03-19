@@ -87,6 +87,18 @@ MODULE exit_command_200 INPUT.
       LEAVE TO SCREEN 0.
 
     WHEN 'EXIT'.
+      CALL FUNCTION 'POPUP_TO_CONFIRM'
+      EXPORTING
+        TEXT_QUESTION  = 'Do you want to exit?'
+        TEXT_BUTTON_1  = 'Yes'
+        TEXT_BUTTON_2  = 'No'
+      IMPORTING
+        ANSWER         = lv_answer
+      EXCEPTIONS
+        TEXT_NOT_FOUND = 1
+        OTHERS         = 2.
+
+      CHECK lv_answer = 1.
       PERFORM clearing.
       LEAVE PROGRAM.
 

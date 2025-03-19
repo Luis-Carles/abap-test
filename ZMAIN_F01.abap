@@ -296,9 +296,9 @@ FORM add_new_product USING iv_input_name TYPE zproducts-prod_name
     wa_product-prod_name = iv_input_name.
     wa_product-prod_quantity = iv_input_quantity.
     wa_product-prod_price = iv_input_price.
-    "INSERT wa_product INTO TABLE it_products.
-
     " Store into database table
+    ls_product-MEINS = 'EA'.
+    ls_product-WAERS = 'EUR'.
     ls_product-prod_id = wa_product-prod_id.
     ls_product-prod_name = wa_product-prod_name.
     ls_product-prod_quantity = wa_product-prod_quantity.

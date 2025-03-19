@@ -170,8 +170,8 @@ CLASS lcl_order IMPLEMENTATION.
     CLEAR me->it_order_products.
     me->o_client = iv_o_client.
     me->total = 0.
-
     " Store in Database table
+    ls_order-WAERS = 'EUR'.
     ls_order-order_id = me->order_id.
     ls_order-order_client = iv_o_client->get_client_id( ).
     ls_order-payment_method = me->payment_method.
@@ -185,7 +185,7 @@ CLASS lcl_order IMPLEMENTATION.
           wa_stored_ordproduct TYPE ty_product,
           ls_ordproduct TYPE zordproducts,
           lv_stock TYPE i.
-
+          ls_ordproduct-MEINS = 'EA'.
     " READ TABLE it_products INTO wa_new_product WITH KEY prod_id = iv_prod_id.
     PERFORM search_product USING iv_prod_id
                            CHANGING wa_new_product.

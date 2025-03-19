@@ -277,16 +277,16 @@ REPORT ZCAFETEST_README.
 * -----------Includes and Modularization:
 
 * ZMANAGEMENT_PROGRAM       ZMAIN_PROGRAM                ZMP_CAFETEST
-* |                    _    |                      _     |
-* |__ZMANAGEMENT_TOP  {     |__ZMAIN_TOP            }    |__ZMP_CAFETEST_TOP
-* |       |__________ {     |                       }____|_______|
-* |                   {     |__ZMAIN_CLS            }    |
-* |__ZMANAGEMENT_ALV  {     |    |                  }    |
-* |__ZMANAGEMENT_F01  {_    |    |__ZMAIN_F01       }    |__ZMAIN_F03
+* |                         |                      _     |
+* |__ZMANAGEMENT_TOP        |__ZMAIN_TOP            }    |__ZMP_CAFETEST_TOP
+* |                         |                       }____|_______|
+* |__ZMANAGEMENT_ALV        |__ZMAIN_CLS            }    |
+* |                         |    |                  }    |
+* |__ZMANAGEMENT_SCR        |    |__ZMAIN_F01       }    |__ZMAIN_F03
 * |                         |                       }    |
-* |__ZMANAGEMENT_O01        |__ZMAIN_F02           _}    |
-* |__ZMANAGEMENT_I01        |                            |__ZMP_CAFETEST_O01
-* |__ZMANAGEMENT_SCR        |__ZMAIN_SCR                 |__ZMP_CAFETEST_I01
+* |__ZMANAGEMENT_F01        |__ZMAIN_F02           _}    |
+* |__ZMANAGEMENT_O01        |                            |__ZMP_CAFETEST_O01
+* |__ZMANAGEMENT_I01        |__ZMAIN_SCR                 |__ZMP_CAFETEST_I01
 
 
 * ________Global Variables and Type Declarations:________________

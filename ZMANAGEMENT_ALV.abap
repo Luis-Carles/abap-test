@@ -23,18 +23,35 @@ DATA: gs_scroll        TYPE lvc_s_stbl,
 
 "_________________________________________________
 " Event Handler
-*CLASS lcl_handler DEFINITION.
-*  PUBLIC SECTION.
-*
-*    METHODS:
+CLASS lcl_handler DEFINITION.
+  PUBLIC SECTION.
+
+    METHODS:
+       when_data_changed FOR EVENT data_changed OF cl_gui_alv_grid
+        IMPORTING er_data_changed.
+
 *      when_user_command FOR EVENT user_command OF cl_gui_alv_grid
 *        IMPORTING e_ucomm,
 *
 *      when_toolbar FOR EVENT toolbar OF cl_gui_alv_grid
 *        IMPORTING e_object e_interactive.
-*ENDCLASS.
-*
-*CLASS lcl_handler IMPLEMENTATION.
+ENDCLASS.
+
+CLASS lcl_handler IMPLEMENTATION.
+     METHOD when_data_changed.
+       DATA: lt_chg_rows TYPE TABLE OF lvc_s_modi,
+             ls_chg_row TYPE lvc_s_modi.
+
+       LOOP AT er_data_changed->mt_good_cells INTO ls_chg_row.
+         READ TABLE gt_results INTO gs_result INDEX ls_chg_row-row_id.
+
+         IF sy-subrc = 0.
+           gs_result-flag_CHG = 'X'.
+           MODIFY gt_results FROM gs_result INDEX ls_chg_row-row_id.
+*           gt_results[ ls_mod_cell-row_id ]-flag_chg = 'X'.  " Mark only as changed line
+         ENDIF.
+       ENDLOOP.
+     ENDMETHOD.
 *    METHOD when_toolbar.
 *      DATA: ls_btn TYPE stb_button.
 *
@@ -73,7 +90,7 @@ DATA: gs_scroll        TYPE lvc_s_stbl,
 *      ls_toolbar-butn_type = 0.
 *      APPEND ls_btn TO e_object->mt_toolbar.
 *    ENDMETHOD.
-*
-*ENDCLASS.
-*
-*DATA: go_handler TYPE REF TO lcl_handler.
+
+ENDCLASS.
+
+DATA: go_handler TYPE REF TO lcl_handler.
