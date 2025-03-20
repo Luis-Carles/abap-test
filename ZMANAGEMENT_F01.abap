@@ -567,12 +567,22 @@ FORM custom_fieldcat.
           gs_fieldcat-edit = 'X'.
         ENDIF.
 
+      WHEN 'PROD_ID'.                  " Product Code
+        gs_fieldcat-key        = 'X'.
+        gs_fieldcat-reptext    = gs_fieldcat-scrtext_l =
+        gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
+        gs_fieldcat-coltext    = TEXT-C12.
+        gs_fieldcat-col_pos    = 3.
+        IF gv_mode = 'M'.
+          gs_fieldcat-edit = 'X'.
+        ENDIF.
+
       WHEN 'CLIENT_NAME'.               " Client Name
         gs_fieldcat-key        = ''.
         gs_fieldcat-reptext    = gs_fieldcat-scrtext_l =
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C03.
-        gs_fieldcat-col_pos    = 3.
+        gs_fieldcat-col_pos    = 4.
         IF gv_mode = 'M'.
           gs_fieldcat-edit = 'X'.
         ENDIF.
@@ -582,7 +592,7 @@ FORM custom_fieldcat.
         gs_fieldcat-reptext    = gs_fieldcat-scrtext_l =
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C04.
-        gs_fieldcat-col_pos    = 4.
+        gs_fieldcat-col_pos    = 5.
         IF gv_mode = 'M'.
           gs_fieldcat-edit = 'X'.
         ENDIF.
@@ -592,14 +602,14 @@ FORM custom_fieldcat.
         gs_fieldcat-reptext    = gs_fieldcat-scrtext_l =
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C05.
-        gs_fieldcat-col_pos    = 5.
+        gs_fieldcat-col_pos    = 6.
 
       WHEN 'ORDER_DATE'.                " Order Date
         gs_fieldcat-key        = ''.
         gs_fieldcat-reptext    = gs_fieldcat-scrtext_l =
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C06.
-        gs_fieldcat-col_pos    = 6.
+        gs_fieldcat-col_pos    = 7.
         IF gv_mode = 'M'.
           gs_fieldcat-edit = 'X'.
         ENDIF.
@@ -609,7 +619,7 @@ FORM custom_fieldcat.
         gs_fieldcat-reptext    = gs_fieldcat-scrtext_l =
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C07.
-        gs_fieldcat-col_pos    = 7.
+        gs_fieldcat-col_pos    = 8.
         IF gv_mode = 'M'.
           gs_fieldcat-edit = 'X'.
         ENDIF.
@@ -619,14 +629,14 @@ FORM custom_fieldcat.
         gs_fieldcat-reptext    = gs_fieldcat-scrtext_l =
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C08.
-        gs_fieldcat-col_pos    = 8.
+        gs_fieldcat-col_pos    = 9.
 
       WHEN 'TOTAL'.                    " Order Total
         gs_fieldcat-key        = ''.
         gs_fieldcat-reptext    = gs_fieldcat-scrtext_l =
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C09.
-        gs_fieldcat-col_pos    = 9.
+        gs_fieldcat-col_pos    = 10.
         IF gv_mode = 'M'.
           gs_fieldcat-edit = 'X'.
         ENDIF.
@@ -636,23 +646,13 @@ FORM custom_fieldcat.
         gs_fieldcat-reptext    = gs_fieldcat-scrtext_l =
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C10.
-        gs_fieldcat-col_pos    = 10.
+        gs_fieldcat-col_pos    = 11.
 
       WHEN 'PAYMENT_METHOD'.           " Payment method
         gs_fieldcat-key        = ''.
         gs_fieldcat-reptext    = gs_fieldcat-scrtext_l =
         gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
         gs_fieldcat-coltext    = TEXT-C11.
-        gs_fieldcat-col_pos    = 11.
-        IF gv_mode = 'M'.
-          gs_fieldcat-edit = 'X'.
-        ENDIF.
-
-      WHEN 'PROD_ID'.                  " Product Code
-        gs_fieldcat-key        = 'X'.
-        gs_fieldcat-reptext    = gs_fieldcat-scrtext_l =
-        gs_fieldcat-scrtext_m  = gs_fieldcat-scrtext_s =
-        gs_fieldcat-coltext    = TEXT-C12.
         gs_fieldcat-col_pos    = 12.
         IF gv_mode = 'M'.
           gs_fieldcat-edit = 'X'.
@@ -705,8 +705,12 @@ FORM custom_fieldcat.
         gs_fieldcat-coltext    = TEXT-C17.
         gs_fieldcat-col_pos    = 17.
 
-      WHEN OTHERS.
+      WHEN 'flag_NEW' OR 'flag_CHG' OR 'COLOR'.
         gs_fieldcat-no_out = 'X'.
+
+      WHEN OTHERS.
+        "gs_fieldcat-no_out = 'X'.
+        CONTINUE.
     ENDCASE.
 
   ENDLOOP.
@@ -847,6 +851,7 @@ FORM delete_row.
   DATA: lt_sel_rows TYPE lvc_t_row,
         ls_sel_row  TYPE lvc_s_row,
         lv_answer(1).
+  CLEAR: gv_delete.
 
   " Get selected row(s)
   CALL METHOD go_grid->get_selected_rows
@@ -866,12 +871,32 @@ FORM delete_row.
   CHECK lv_answer = 1.
 
   LOOP AT lt_sel_rows INTO ls_sel_row.
-    " ACTIONS AT DB TABLE
-    " DOING!!
-    DELETE gt_results INDEX ls_sel_row-index.
+    " DELETIONS AT DB TABLE
+    READ TABLE gt_results INTO gs_result INDEX ls_sel_row-INDEX.
+    IF sy-subrc = 0.
+        IF gs_result-flag_NEW = ''.
+          DELETE FROM zcorders WHERE ORDER_ID = gs_result-ORDER_ID.
+          IF sy-subrc <> 0.
+            gv_delete = 'E'.
+          ENDIF.
+
+          DELETE FROM zordproducts WHERE ORDER_ID = gs_result-ORDER_ID.
+          IF sy-subrc <> 0.
+            gv_delete = 'E'.
+          ENDIF.
+        ENDIF.
+    ENDIF.
   ENDLOOP.
 
-  MESSAGE 'Rows deleted' TYPE 'S'.
+  IF gv_delete = 'E'.
+    " If DB deletion fails, rollback and exit
+    ROLLBACK WORK.
+    EXIT.
+  ELSE.
+      " DELETIONS AT Internal Table
+      DELETE gt_results WHERE ORDER_ID = gs_result-ORDER_ID.
+      MESSAGE 'Rows deleted' TYPE 'S'.
+  ENDIF.
 ENDFORM.
 
 " Subroutine that check any input values for new rows prior to
@@ -910,9 +935,8 @@ FORM validate_check.
                                     OR    flag_NEW = 'X'.
 
     " Check for introduced product data
-    IF ( gs_result-PROD_NAME   IS NOT INITIAL AND ( gs_result-PROD_PRICE IS INITIAL OR gs_result-PROD_STOCK IS INITIAL ) ) OR
-       ( gs_result-PROD_PRICE  IS NOT INITIAL AND ( gs_result-PROD_NAME  IS INITIAL OR gs_result-PROD_STOCK IS INITIAL ) ) OR
-       ( gs_result-PROD_STOCK  IS NOT INITIAL AND ( gs_result-PROD_NAME  IS INITIAL OR gs_result-PROD_PRICE IS INITIAL ) ).
+    IF gs_result-PROD_NAME   IS INITIAL OR gs_result-PROD_PRICE  IS INITIAL OR
+       gs_result-PROD_STOCK  IS INITIAL .
 
       GV_CHECK = 'E'.
       lv_message = 'When introducing a product please input Name / Price / Stock'.
@@ -921,8 +945,7 @@ FORM validate_check.
     ENDIF.
 
     " Check for introduced client data
-    IF ( gs_result-CLIENT_NAME      IS NOT INITIAL AND gs_result-CLIENT_LAST_NAME IS INITIAL ) OR
-       ( gs_result-CLIENT_LAST_NAME IS NOT INITIAL AND gs_result-CLIENT_NAME  IS INITIAL ).
+    IF gs_result-CLIENT_NAME IS INITIAL OR gs_result-CLIENT_LAST_NAME IS INITIAL.
 
       GV_CHECK = 'E'.
       lv_message = 'When introducing a client please input both Name / Lastname'.
@@ -931,9 +954,8 @@ FORM validate_check.
     ENDIF.
 
     " Check for introduced order data
-    IF ( gs_result-TOTAL IS NOT INITIAL AND ( gs_result-PROD_QUANTITY IS INITIAL OR gs_result-PAYMENT_METHOD IS INITIAL ) ) OR
-       ( gs_result-PROD_QUANTITY  IS NOT INITIAL AND ( gs_result-TOTAL  IS INITIAL OR gs_result-PAYMENT_METHOD IS INITIAL ) ) OR
-       ( gs_result-PAYMENT_METHOD IS NOT INITIAL AND ( gs_result-TOTAL  IS INITIAL OR gs_result-PROD_QUANTITY IS INITIAL ) ).
+    IF gs_result-TOTAL IS INITIAL OR gs_result-PROD_QUANTITY  IS INITIAL OR
+       gs_result-PAYMENT_METHOD IS INITIAL.
 
       GV_CHECK = 'E'.
       lv_message = 'When introducing an order please input TOTAL / Payment Method / specific product quantity'.
@@ -943,16 +965,13 @@ FORM validate_check.
 
     IF gs_result-TOTAL <> ( gs_result-PROD_QUANTITY * gs_result-PROD_PRICE ) OR
        ( gs_result-TOTAL < 45 AND ( gs_result-TOTAL <> ( gs_result-PROD_QUANTITY * gs_result-PROD_PRICE ) / 2 )
-         AND gs_result-ORDER_COUNT MOD 3 = 0 ).
+       AND gs_result-ORDER_COUNT MOD 3 = 0 ).
 
       GV_CHECK = 'E'.
       lv_message = 'The introduced total:' + gs_result-TOTAL + ', Is not consitent with the product list.' .
       MESSAGE lv_message TYPE 'E'.
       EXIT.
     ENDIF.
-
-    " REst of VALIDATIONS  DOING!!
-
   ENDLOOP.
 
 ENDFORM.
@@ -960,7 +979,9 @@ ENDFORM.
 " Subroutine that save changes into the Internal and DB tables.
 FORM save_changes.
   PERFORM validate_check.
+  CHECK gv_check IS INITIAL.
 
+  CLEAR: gv_save.
   IF sy-subrc = 0.
     " ACTIONS AT DB TABLE
     LOOP AT gt_results INTO gs_result WHERE flag_CHG = 'X'
@@ -977,6 +998,10 @@ FORM save_changes.
           gs_result-ORDER_COUNT = gs_result-ORDER_COUNT + 1.
           UPDATE zclients SET order_count = gs_result-ORDER_COUNT
             WHERE client_id = gs_result-ORDER_CLIENT.
+          IF sy-subrc <> 0.
+            gv_save = 'E'.
+          ENDIF.
+
         ELSE.
           READ TABLE gt_master_clients INTO DATA(ls_new_client) INDEX LINES( gt_master_clients ).
           IF sy-subrc = 0.
@@ -986,6 +1011,10 @@ FORM save_changes.
             gs_zclient-CLIENT_LAST_NAME = gs_result-CLIENT_LAST_NAME.
             gs_zclient-ORDER_COUNT = 1.
             INSERT INTO zclients VALUES gs_zclient.
+            IF sy-subrc <> 0.
+              gv_save = 'E'.
+            ENDIF.
+
           ENDIF.
         ENDIF.
 
@@ -1000,17 +1029,23 @@ FORM save_changes.
                                prod_name = gs_result-PROD_NAME
                                prod_price = gs_result-PROD_PRICE
             WHERE prod_id = gs_result-PROD_ID.
+          IF sy-subrc <> 0.
+            gv_save = 'E'.
+          ENDIF.
         ELSE.
           READ TABLE gt_master_products INTO DATA(ls_new_product) INDEX LINES( gt_master_products ).
           IF sy-subrc = 0.
             gs_result-PROD_ID = ls_new_product-PROD_ID + 1.
             gs_zproduct-PROD_ID = gs_result-PROD_ID.
-            gs_zproduct-PROD_NAME = gs_result-CLIENT_NAME.
-            gs_zproduct-PROD_PRICE = gs_result-CLIENT_LAST_NAME.
+            gs_zproduct-PROD_NAME = gs_result-PROD_NAME.
+            gs_zproduct-PROD_PRICE = gs_result-PROD_PRICE.
             gs_zproduct-PROD_QUANTITY = gs_result-PROD_STOCK - gs_result-PROD_QUANTITY.
             gs_zproduct-MEINS = gs_result-MEINS.
             gs_zproduct-WAERS = gs_result-WAERS.
             INSERT INTO zproducts VALUES gs_zproduct.
+            IF sy-subrc <> 0.
+              gv_save = 'E'.
+            ENDIF.
           ENDIF.
         ENDIF.
 
@@ -1024,46 +1059,64 @@ FORM save_changes.
         gs_zcorder-ORDER_TIME = gs_result-ORDER_TIME.
         gs_zcorder-ORDER_CLIENT = gs_result-ORDER_CLIENT.
         INSERT INTO zcorders VALUES gs_zcorder.
+        IF sy-subrc <> 0.
+          gv_save = 'E'.
+        ENDIF.
 
         "________________________________________________________
         " CHANGES ON zordproducts
         gs_zordproduct-ORDER_ID = gs_result-ORDER_ID.
         gs_zordproduct-PROD_ID = gs_result-PROD_ID.
         gs_zordproduct-PROD_QUANTITY = gs_result-PROD_QUANTITY.
-        gs_zproduct-MEINS = gs_result-MEINS.
+        gs_zordproduct-MEINS = gs_result-MEINS.
         INSERT INTO zordproducts VALUES gs_zordproduct.
+        IF sy-subrc <> 0.
+          gv_save = 'E'.
+        ENDIF.
 
-        gs_result-flag_NEW = ''.
-        gs_result-flag_CHG = ''.
+        " If everything went well, take down the new or chg flag
+        IF gv_save <> 'E'.
+          gs_result-flag_NEW = ''.
+          gs_result-flag_CHG = ''.
+        ENDIF.
 
       ELSEIF gs_result-flag_CHG = 'X'.
-        " zproduct
-        " MODIFY PRODUCT
+        " ON CLOSED ORDERS ONLY PRODUCT INFO CAN BE CHANGED
+        " Even if price and stock changes, we could still know the
+        " price at that day.
 
-        " zcorder
-        " MODIFY ORDER
+        " CHANGES ON zproduct
+        UPDATE zproducts SET prod_quantity = gs_result-PROD_STOCK
+                             prod_name     = gs_result-PROD_NAME
+                             prod_price    = gs_result-PROD_PRICE
+          WHERE prod_id = gs_result-PROD_ID.
+        IF sy-subrc <> 0.
+          gv_save = 'E'.
+        ENDIF.
 
-        " zordproducts
-        " MODIFY ORDPRODUCTS
+        " If everything went well, take down the chg flag
+        IF gv_save <> 'E'.
+          gs_result-flag_CHG = ''.
+        ENDIF.
 
-        gs_result-flag_CHG = ''.
       ENDIF.
     ENDLOOP.
 
-    IF sy-subrc <> 0.
+    " Given any error , rollback.
+    IF gv_save = 'E'.
       ROLLBACK WORK.
       MESSAGE 'Error while saving' TYPE 'E'.
     ELSE.
       COMMIT WORK AND WAIT.
       MESSAGE 'Changes saved successfully' TYPE 'S'.
     ENDIF.
-
   ENDIF.
 ENDFORM.
 
 " Subroutine that liberates memory and clears alv variables / objects
 FORM clearing.
-  CLEAR: gs_zclient, gs_zproduct, gs_zcorder, gs_zordproduct.
+  CLEAR: gs_zclient, gs_zproduct, gs_zcorder, gs_zordproduct,
+         gv_check, gv_save.
 
   CALL METHOD go_grid->free.
   CALL METHOD go_dcontainer->free.

@@ -29,7 +29,9 @@ DATA: gv_mode       TYPE CHAR1 VALUE 'D',  " View Mode
       gv_where_pr   TYPE string,
       gv_code       TYPE sy-ucomm,         " Global variables to avoid
       ok_code       TYPE sy-ucomm,         " messing with sy-ucomm
-      gv_check      TYPE STA_TEXT.         " Check input flag
+      gv_check      TYPE STA_TEXT,         " Check input flag
+      gv_save       TYPE STA_TEXT,
+      gv_delete     TYPE STA_TEXT.
 
 "_______________________________________________________________________
 " Internal tables and Structures Declaration
