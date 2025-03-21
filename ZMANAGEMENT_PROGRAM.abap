@@ -10,12 +10,6 @@ REPORT ZMANAGEMENT_PROGRAM.
 " ALV class import
 INCLUDE <CL_ALV_CONTROL>.
 
-" Tables & Data import
-INCLUDE ZMAIN_TOP.
-
-" Classes & Soubroutines (ZMAIN_F01) import
-INCLUDE ZMAIN_CLS.
-
 " DB. Tables, global structures, internal tables import
 INCLUDE ZMANAGEMENT_TOP.
 
@@ -35,31 +29,51 @@ INCLUDE ZMANAGEMENT_O01.
 INCLUDE ZMANAGEMENT_I01.
 
 INITIALIZATION.
+  PERFORM initialize.
 
 AT SELECTION-SCREEN OUTPUT.
+  PERFORM selection_screen_OUTPUT.
+
+AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_ufile.
+  PERFORM get_ufilename USING p_ufile.
 
 AT SELECTION-SCREEN.
-  " View mode Selection radiobutton
-  IF r_dis = 'X'.
-    gv_mode = 'D'.
-  ELSEIF r_mng = 'X'.
-    gv_mode = 'M'.
-  ENDIF.
+  IF sy-ucomm = 'ONLI' AND r_exce = 'X'. " Excel Upload
+    PERFORM check_u_file.
+*  ELSEIF sy-ucomm = 'FC01'.
+*    PERFORM dark_mode.                  " DARK MODE
 
-  " Search approach Selection radiobutton
-  IF r_ndyn = 'X'.
-    gv_approach = 'ND'.
-  ELSEIF r_mng = 'X'.
-    gv_approach = 'DY'.
+  ELSE.                                  " DB Search
+    " View mode Selection radiobutton
+    IF r_dis = 'X'.
+      gv_mode = 'D'.
+    ELSEIF r_mng = 'X'.
+      gv_mode = 'M'.
+    ENDIF.
+
+    " Search approach Selection radiobutton
+    IF r_ndyn = 'X'.
+      gv_approach = 'ND'.
+    ELSEIF r_mng = 'X'.
+      gv_approach = 'DY'.
+    ENDIF.
   ENDIF.
 
 START-OF-SELECTION.
-  PERFORM search_order_list.
+  PERFORM search_order_list.      " Get & Make Data
 
 END-OF-SELECTION.
-  CASE gv_mode.
-    WHEN 'D'.
-      CALL SCREEN 100.
-    WHEN 'M'.
-      CALL SCREEN 200.
-  ENDCASE.
+  IF gt_results[] IS NOT INITIAL.
+    IF r_exce = 'X'.
+      CALL SCREEN 100.            "Display View from Excel
+    ELSE.
+      CASE gv_mode.
+        WHEN 'D'.
+          CALL SCREEN 100.        "Display View from DB
+        WHEN 'M'.
+          CALL SCREEN 200.        "Management View from DB
+      ENDCASE.
+    ENDIF.
+  ELSE.
+    MESSAGE 'There is no data to display.' TYPE 'E'.
+  ENDIF.

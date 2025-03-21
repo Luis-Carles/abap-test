@@ -8,6 +8,8 @@ TABLES: zclients,
         zordproducts,
         zproducts.
 
+TABLES: SSCRFIELDS.
+
 "_______________________________________________________________________
 " Global variables
 " VIEW MODE:        D: Display
@@ -61,3 +63,23 @@ DATA: BEGIN OF gt_master_products OCCURS 0, " Master Equipment for Products
         PROD_QUANTITY    LIKE ZPRODUCTS-PROD_QUANTITY,
         PROD_PRICE       LIKE ZPRODUCTS-PROD_PRICE,
        END OF gt_master_products.
+
+"_______________________________________________________________________
+" Excel Downloading and Uploading Variables
+*DATA: gs_key          LIKE WWWDATATAB,
+*      gs_funcdown     TYPE SMP_DYNTXT.
+
+*DATA: gv_d_dir       TYPE string,
+*      gv_d_init_dir  TYPE string,
+*      gv_d_file      LIKE RLGRAP-FILENAME.
+
+DATA: gv_u_path       TYPE string,
+      gv_u_rc         TYPE i      VALUE 1,
+      gv_win_title    TYPE string VALUE 'OPEN',
+      gv_u_files      TYPE FILETABLE,
+      gv_u_filename   TYPE string,
+      gv_u_check_file TYPE string,
+      gv_u_check_flag TYPE abap_bool.
+
+DATA: gt_excel  TYPE TABLE OF alsmex_tabline,
+      gs_excel  TYPE alsmex_tabline.
