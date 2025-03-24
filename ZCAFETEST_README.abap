@@ -50,6 +50,7 @@ REPORT ZCAFETEST_README.
 * | PROD_QUANTITY    |
 * +------------------+
 
+
 * ______________Domains, Data Elements and Structures:______________
 
 * -Domains & derived Data elements:  >>> (**)"Future"
@@ -127,6 +128,7 @@ REPORT ZCAFETEST_README.
 *       **ZDM_EXTEXT: Domain for extended texts (CHAR 250)
 *            |_____ZDE_FBCOMM: Feedback extended comments
 
+
 * _____________________Structures:___________________________________
 
 *      ZST_STATS: Structure for storing the statistics of ZCAFETEST
@@ -148,6 +150,39 @@ REPORT ZCAFETEST_README.
 * |             |             |            |              |
 * FB_ID        FB_DATE      FB_RATE      CLIENT_ID        FB_COMM
 *(ZDE_FBID)   (ZDE_FDATE)  (ZDE_FBRAT)  (ZDE_CLIENTID)    (ZDE_FBCOMM)
+
+*   .....................
+
+*      ZST_RESULTS: Structure for storing the results of the search
+*           |       launched by ZMANAGEMENT_PROGRAM (ALV GRID display)
+*  _________|_________________________________________________
+* |                |                  |            |          |
+* ORDER_ID       ORDER_CLIENT      PROD_ID       CLIENT_NAME  |
+*(ZDE_ORDER_ID)  (ZDE_CLIENTID)   (ZDE_PRODID)  (ZDE_CNAME)   |
+*                                                             |
+*                                                             |
+*  ___________________________________________________________|
+* |                     |            |             |          |
+* CLIENT_LAST_NAME    ORDER_COUNT   ORDER_DATE    ORDER_TIME  |
+*(ZDE_CLNAME)        (ZDE_CCOUNT)  (ZDE_ODATE)   (ZDE_OTIME)  |
+*                                                             |
+*                                                             |
+*  ___________________________________________________________|
+* |            |              |          |                    |
+* REG_STATUS   TOTAL          WAERS     PAYMENT_METHOD        |
+*(CHAR 20 0)   (ZDE_OTOTAL)  (WAERS)   (ZDE_OPAYM)            |
+*                                                             |
+*                                                             |
+*  ___________________________________________________________|
+* |            |             |               |                |
+* PROD_NAME    PROD_PRICE    PROD_QUANTITY   PROD_STOCK       |
+*(ZDE_PNAME)  (ZDE_PPRICE)  (ZDE_ORDPQUAN)   (ZDE_PQUAN)      |
+*                                                             |
+*                                                             |
+*  ___________________________________________________________|
+* |        |             |                |
+* MEINS    COLOR         FLAG_NEW         FLAG_OLD
+*(MEINS)  (LVC_T_SCOL)  (CHAR 1 0)       (CHAR 1 0)
 
 
 * ________________Search Helps:_____________________________________
@@ -240,9 +275,7 @@ REPORT ZCAFETEST_README.
 
 * _____________ZMANAGEMENT_PROGRAM:______________________________
 * GRID ALV based Screen Module program for CAFETEST.
-*                                      It includes ZMAIN_TOP
-*                                                  ZMAIN_CLS
-*                                                  ZMANAGEMENT_O01
+*                                      It includes <CL_ALV_CONTROL>
 *                                                  ZMANAGEMENT_TOP
 *                                                  ZMANAGEMENT_ALV
 *                                                  ZMANAGEMENT_SCR
@@ -250,8 +283,21 @@ REPORT ZCAFETEST_README.
 *                                                  ZMANAGEMENT_O01
 *                                                  ZMANAGEMENT_I01
 
+* UPLOAD METHOD:    DB Search
+*                   Excel File
+
+* VIEW MODE:        D: Display
+*                   M: Management
+
+* SEARCH APPROACH:  ND: Non-Dynamic Conditions
+*                   DY: Dynamic Conditions
+
 * Screen 100 ------> Display View
 * Screen 200 ------> Management View
+
+
+* -Reading by abstraction help:
+*    |_Lines []
 
 *   .....................
 
@@ -378,6 +424,76 @@ REPORT ZCAFETEST_README.
 *         |
 *         |_____lo_handler    TYPE REF TO lcl_fourth_wing_handler
 
+*   .....................
+
+* -ZMANAGEMENT_TOP:
+*     |
+*     |_Includes: X
+*     |
+*     |_DB. Tables: zproducts, zclients, zcorders, zordproducts,
+*     |             SSCRFIELDS (Selection-Screen Fields Table).
+*     |
+*     |_Internal tables:
+*     |   |__gt_results: standard table of ZST_RESULT to store
+*     |   |              every fetched row to display in ALV GRID
+*     |   |
+*     |   |__gt_master_clients: sorted table of clients master table
+*     |   |          |          data information
+*     |   |          |__CLIENT_ID        LIKE zclients-CLIENT_ID
+*     |   |          |__CLIENT_NAME      LIKE zclients-CLIENT_NAME
+*     |   |          |__CLIENT_LAST_NAME LIKE zclients-CLIENT_LAST_NAME
+*     |   |          |__ORDER_COUNT      LIKE zclients-ORDER_COUNT
+*     |   |
+*     |   |__gt_master_clients: sorted table of products master table
+*     |   |          |          data information
+*     |   |          |__PROD_ID          LIKE zproducts-PROD_ID
+*     |   |          |__PROD_NAME        LIKE zproducts-PROD_NAME
+*     |   |          |__PROD_QUANTITY    LIKE zproducts-PROD_QUANTITY
+*     |   |          |__PROD_PRICE       LIKE zproducts-PROD_PRICE
+*     |   |
+*     |   |__gt_excel: standard table of alsmex_tabline to store
+*     |                raw data extracted from excel file
+*     |
+*     |_Arquetypical variables:
+*     |   |_____gv_mode     TYPE CHAR1   ALV GRID View Mode
+*     |   |
+*     |   |_____gv_approach TYPE CHAR2   Data Search Approach
+*     |   |
+*     |   |_____gv_where    TYPE string  dynamic conditions string
+*     |   |
+*     |   |_____gv_where_cl TYPE string  master clients d.cond string
+*     |   |
+*     |   |_____gv_where_pr TYPE string  master product d.cond string
+*     |   |
+*     |   |_____gv_code     TYPE sy-ucomm  stores sy-ucomm (standard)
+*     |   |
+*     |   |_____ok_code     TYPE sy-ucomm  checks sy-ucomm (standard)
+*     |   |
+*     |   |_____gv_check    TYPE STA_TEXT  Check Input flag
+*     |   |
+*     |   |_____gv_save     TYPE STA_TEXT  Save flag
+*     |   |
+*     |   |_____gv_delete   TYPE STA_TEXT  Delete flag
+*     |
+*     |_Object Instances: X
+
+*   .....................
+
+* -ZMANAGEMENT_ALV:
+*     |
+*     |_Includes: X
+*     |
+*     |_DB. Tables: X
+*     |
+*     |_Types: X
+*     |
+*     |_Internal tables: X
+*     |
+*     |_Arquetypical variables:
+*     |   |_____gv_  TYPE
+*     |
+*     |_Object Instances: X
+
 
 * ___________Classes and Event Handling CLS:_____________________
 
@@ -444,6 +560,18 @@ REPORT ZCAFETEST_README.
 * the third order total does not exceed a specific price it receives
 * a 50% discount. The subyacent idea was to train event raising and
 * handling consequent actions within OOP in SAP ABAP.
+
+*   .....................
+
+* -ZMANAGEMENT_CLS: OOP classes for ZMANAGEMENT GRID ALV handler class
+*     |
+*     |_Includes: X
+*     |
+*     |_Classes:
+*          |
+*         _|_
+*  UML Class Diagram with expanded method/attribute explanations:
+
 
 
 * __________________Soubroutines FXX:____________________________
@@ -624,6 +752,18 @@ REPORT ZCAFETEST_README.
 *                   collets the data to display the retrieved stats,
 *                   and also save the date and time. (Screen 330)
 
+*   .....................
+
+* -ZMANAGEMENT_F01: Contains every necessary subroutine for getting
+* and making the data from both DB Tables and Excel Files. Every
+* action related to Display, refresh, clearing and DB persistance
+* for GRID ALV is also stored here.
+
+* -Reading by abstraction help:
+*    |   ----------------------------------------------------
+*    |                [Program Sections]
+*    |
+
 
 * __________________PBO and PAI Logic:____________________________
 
@@ -740,6 +880,31 @@ REPORT ZCAFETEST_README.
 *                        |_____BACK           Return to Employee M.
 *                                             + Clear global var.
 
+*   .....................
+
+* -ZMANAGEMENT_O01: Contains every module for ZMANAGEMENT that is
+* lauched automatically everytime a screen is loaded. All of them
+* either windows setup or ALV Write methods.
+
+* -Reading by abstraction help:
+*    |   ----------------------------------------------------
+*    |                [Status modules]
+*    |
+*    |_Lines []:
+
+*   .....................
+
+* -ZMANAGEMENT_I01: Contains every module for ZMANAGEMET that is
+* launched automatically after any button press from the user, those
+* are, the modules for handling each button option.
+
+* -Reading by abstraction help:
+*    |   ----------------------------------------------------
+*    |                [Initial Screen]         Action:
+*    |
+*    |_Lines []: user_command_100:
+*                        |_____ZREFRESH      Refreshes the Grid
+
 
 * ___________Screen-Selection Input Logic SCR:____________________
 
@@ -800,3 +965,13 @@ REPORT ZCAFETEST_README.
 *                                         ->Add product to Stock
 *                                         ->Update stock product
 *                                         ->Retrieve Stats
+
+*   .....................
+
+* -ZMANAGEMENT_SCR: Contains input values for the screen-selection section
+* of ZMANAGEMENT. Chosing the desired Upload Method, View Mode and Data
+* Search Approach, as well with the search conditions if needed.
+
+* -Reading by abstraction help:
+*    |
+*    |_Lines []:

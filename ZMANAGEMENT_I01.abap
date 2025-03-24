@@ -11,7 +11,11 @@ MODULE user_command_100 INPUT.
 
   CASE gv_code.
     WHEN 'ZREFRESH'.
-      PERFORM refresh_grid USING 'X'. " refind = 'X'
+      IF r_sear = 'X'.
+        PERFORM refresh_grid USING 'X'. " refind = 'X'.
+      ELSE.
+        PERFORM refresh_grid USING ''.  " refind = ''.
+      ENDIF.
 
   ENDCASE.
 ENDMODULE.
@@ -40,9 +44,12 @@ MODULE exit_command_100 INPUT.
         TEXT_NOT_FOUND = 1
         OTHERS         = 2.
 
-      CHECK lv_answer = 1.
-      PERFORM clearing.
-      LEAVE PROGRAM.
+      IF lv_answer = '1'.
+        PERFORM clearing.
+        LEAVE PROGRAM.
+      ELSEIF lv_answer = '2' OR lv_answer = 'A'.
+        RETURN.
+      ENDIF.
 
   ENDCASE.
 ENDMODULE.
@@ -98,9 +105,12 @@ MODULE exit_command_200 INPUT.
         TEXT_NOT_FOUND = 1
         OTHERS         = 2.
 
-      CHECK lv_answer = 1.
-      PERFORM clearing.
-      LEAVE PROGRAM.
+      IF lv_answer = '1'.
+        PERFORM clearing.
+        LEAVE PROGRAM.
+      ELSEIF lv_answer = '2' OR lv_answer = 'A'.
+        RETURN.
+      ENDIF.
 
   ENDCASE.
 ENDMODULE.

@@ -16,6 +16,9 @@ INCLUDE ZMANAGEMENT_TOP.
 " AlV custom Control variables import
 INCLUDE ZMANAGEMENT_ALV.
 
+" Classes for Event Handling
+INCLUDE ZMANAGEMENT_CLS.
+
 " Screen-Selection input parameters import
 INCLUDE ZMANAGEMENT_SCR.
 

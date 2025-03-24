@@ -331,36 +331,32 @@ FORM initialize.
   
   " Subroutine that retrieves data from an excel file
   FORM get_data_excel.
-    DATA: ls_intern TYPE alsmex_tabline,
-          lv_fname  LIKE RLGRAP-FILENAME,
+    DATA: lv_fname  LIKE RLGRAP-FILENAME,
           lv_err_msg type string.
   
     CLEAR: gt_excel.
   
     IF p_ufile IS NOT INITIAL AND p_ufile <> 'C:\'.
-      "____________________________________________________________
-      lv_fname = gv_u_filename.
+       lv_fname = gv_u_filename.
   
-      CALL FUNCTION 'ALSM_EXCEL_TO_INTERNAL_TABLE'
-        EXPORTING
-          filename                = lv_fname
-          i_begin_col             = '1'
-          i_begin_row             = '2'
-          i_end_col               = '17'
-          i_end_row               = '11'
-        TABLES
-          intern                  = gt_excel
-        EXCEPTIONS
-          inconsistent_parameters = 1
-          upload_ole              = 2
-          OTHERS                  = 3.
+       CALL FUNCTION 'ALSM_EXCEL_TO_INTERNAL_TABLE'
+         EXPORTING
+           filename                = lv_fname
+           i_begin_col             = '1'
+           i_begin_row             = '2'
+           i_end_col               = '17'
+           i_end_row               = '1000'
+         TABLES
+           intern                  = gt_excel
+         EXCEPTIONS
+           inconsistent_parameters = 1
+           upload_ole              = 2
+           OTHERS                  = 3.
       IF sy-subrc <> 0.
         lv_err_msg = conv string( sy-subrc ).
         CONCATENATE 'Error reading Excel file.' lv_err_msg INTO lv_err_msg.
         MESSAGE lv_err_msg TYPE 'E'.
       ENDIF.
-      "_____________________________________________________________
-  
   
     ELSE.
       MESSAGE 'The uploading excel file must not be empty.' TYPE 'E'.
@@ -371,37 +367,137 @@ FORM initialize.
   
   "Subroutine that handles gt_results from the data retrieved from Excel
   FORM make_data_excel.
-    DATA: lt_columns TYPE STANDARD TABLE OF string,
-          lv_index   TYPE i.
-    CLEAR: gs_excel.
+    DATA: lv_row   TYPE alsmex_tabline-row VALUE '0001'.
   
-  *  LOOP AT gt_excel INTO gs_excel.
-  *    CLEAR gs_result.
-  *
-  *    SPLIT gs_excel_row AT cl_abap_char_utilities=>horizontal_tab INTO TABLE lt_columns.
-  *
-  *    IF LINES( lt_columns ) >= 17.
-  *      READ TABLE lt_columns INDEX 1  INTO gs_result-ORDER_ID.
-  *      READ TABLE lt_columns INDEX 2  INTO gs_result-ORDER_CLIENT.
-  *      READ TABLE lt_columns INDEX 3  INTO gs_result-PROD_ID.
-  *      READ TABLE lt_columns INDEX 4  INTO gs_result-CLIENT_NAME.
-  *      READ TABLE lt_columns INDEX 5  INTO gs_result-CLIENT_LAST_NAME.
-  *      READ TABLE lt_columns INDEX 6  INTO gs_result-ORDER_COUNT.
-  *      READ TABLE lt_columns INDEX 7  INTO gs_result-ORDER_DATE.
-  *      READ TABLE lt_columns INDEX 8  INTO gs_result-ORDER_TIME.
-  *      READ TABLE lt_columns INDEX 9  INTO gs_result-REG_STATUS.
-  *      READ TABLE lt_columns INDEX 10 INTO gs_result-TOTAL.
-  *      READ TABLE lt_columns INDEX 11 INTO gs_result-WAERS.
-  *      READ TABLE lt_columns INDEX 12 INTO gs_result-PAYMENT_METHOD.
-  *      READ TABLE lt_columns INDEX 13 INTO gs_result-PROD_NAME.
-  *      READ TABLE lt_columns INDEX 14 INTO gs_result-PROD_PRICE.
-  *      READ TABLE lt_columns INDEX 15 INTO gs_result-PROD_QUANTITY.
-  *      READ TABLE lt_columns INDEX 16 INTO gs_result-PROD_STOCK.
-  *      READ TABLE lt_columns INDEX 17 INTO gs_result-MEINS.
-  *
-  *      APPEND gs_result TO gt_results.
-  *    ENDIF.
-  *  ENDLOOP.
+    DATA: lv_cleaned_value TYPE string,
+          lv_month         TYPE string,
+          lv_day           TYPE string,
+          lv_year          TYPE string,
+          lv_hour          TYPE string,
+          lv_min           TYPE string,
+          lv_sec           TYPE string,
+          lv_apm           TYPE string.
+  
+    CLEAR: gs_excel,gs_result.
+    PERFORM custom_colors.
+  
+    LOOP AT gt_excel INTO gs_excel.
+      IF lv_row <> gs_excel-ROW.
+        gs_result-COLOR = gt_colors.
+        gs_result-flag_NEW = ''.
+        gs_result-flag_CHG = ''.
+  
+        APPEND gs_result TO gt_results.
+        CLEAR: gs_result.
+        lv_row = gs_excel-ROW.
+      ENDIF.
+  
+      CASE gs_excel-COL.
+        WHEN '0001'.
+          gs_result-ORDER_ID         = gs_excel-VALUE.
+  
+        WHEN '0002'.
+          gs_result-ORDER_CLIENT     = gs_excel-VALUE.
+  
+        WHEN '0003'.
+          gs_result-PROD_ID          = gs_excel-VALUE.
+  
+        WHEN '0004'.
+          gs_result-CLIENT_NAME      = gs_excel-VALUE.
+  
+        WHEN '0005'.
+          gs_result-CLIENT_LAST_NAME = gs_excel-VALUE.
+  
+        WHEN '0006'.
+          gs_result-ORDER_COUNT      = gs_excel-VALUE.
+  
+        WHEN '0007'.
+          FIND '/' IN gs_excel-VALUE.
+          IF sy-subrc = 0.
+            lv_cleaned_value = gs_excel-VALUE.
+            SPLIT lv_cleaned_value AT '/' INTO lv_month lv_day lv_year.
+            IF strlen( lv_month ) = 1.
+              lv_month = '0' && lv_month.
+            ENDIF.
+            IF strlen( lv_day ) = 1.
+              lv_day = '0' && lv_day.
+            ENDIF.
+            lv_cleaned_value = lv_year && lv_month && lv_day.
+  
+            gs_result-ORDER_DATE       = lv_cleaned_value.
+            CLEAR: lv_cleaned_value, lv_month, lv_day, lv_year.
+          ELSE.
+            gs_result-ORDER_DATE       = gs_excel-VALUE.
+          ENDIF.
+  
+        WHEN '0008'.
+          IF gs_excel-VALUE CS 'AM' OR gs_excel-VALUE CS 'PM'.
+            lv_cleaned_value = gs_excel-VALUE.
+            SPLIT lv_cleaned_value AT ':' INTO lv_hour lv_min lv_sec.
+            SPLIT lv_sec AT space INTO lv_sec lv_apm.
+            IF lv_apm = 'PM' AND lv_hour <> '12'.
+              lv_hour = lv_hour + 12.
+              SPLIT lv_hour AT space INTO lv_hour lv_cleaned_value.
+            ELSEIF lv_apm = 'AM' AND lv_hour = '12'.
+              lv_hour = '00'.
+            ENDIF.
+            IF strlen( lv_hour ) = 1.
+              lv_hour = '0' && lv_hour.
+            ENDIF.
+            IF strlen( lv_min ) = 1.
+              lv_min  = '0' && lv_min.
+            ENDIF.
+            IF strlen( lv_sec ) = 1.
+              lv_sec  = '0' && lv_sec.
+            ENDIF.
+            lv_cleaned_value = lv_hour && lv_min && lv_sec.
+  
+            gs_result-ORDER_TIME       = lv_cleaned_value.
+            CLEAR: lv_cleaned_value, lv_hour, lv_min, lv_sec, lv_apm.
+          ELSE.
+            gs_result-ORDER_TIME       = gs_excel-VALUE.
+          ENDIF.
+  
+        WHEN '0009'.
+          gs_result-REG_STATUS       = gs_excel-VALUE.
+  
+        WHEN '0010'.
+          gs_result-TOTAL            = gs_excel-VALUE.
+  
+        WHEN '0011'.
+          gs_result-WAERS            = gs_excel-VALUE.
+  
+        WHEN '0012'.
+          gs_result-PAYMENT_METHOD   = gs_excel-VALUE.
+  
+        WHEN '0013'.
+          gs_result-PROD_NAME        = gs_excel-VALUE.
+  
+        WHEN '0014'.
+          gs_result-PROD_PRICE       = gs_excel-VALUE.
+  
+        WHEN '0015'.
+          lv_cleaned_value = gs_excel-VALUE.
+          REPLACE ALL OCCURRENCES OF ',' IN lv_cleaned_value WITH ''.
+  
+          gs_result-PROD_QUANTITY    = lv_cleaned_value.
+          CLEAR: lv_cleaned_value.
+  
+        WHEN '0016'.
+          lv_cleaned_value = gs_excel-VALUE.
+          REPLACE ALL OCCURRENCES OF ',' IN lv_cleaned_value WITH ''.
+  
+          gs_result-PROD_STOCK       = lv_cleaned_value.
+          CLEAR: lv_cleaned_value.
+  
+        WHEN '0017'.
+          gs_result-MEINS            = gs_excel-VALUE.
+  
+        WHEN OTHERS.
+          CONTINUE.
+  
+      ENDCASE.
+    ENDLOOP.
   ENDFORM.
   
   " Subroutine that launches the database search and is called from the
@@ -982,7 +1078,11 @@ FORM initialize.
     ELSE.
       CASE gv_mode.
         WHEN 'D'.
-           PERFORM refresh_grid USING 'X'. " Refreshing, refind enabled
+           IF r_sear = 'X'.
+             PERFORM refresh_grid USING 'X'. " Refreshing, refind enabled
+           ELSE.
+             PERFORM refresh_grid USING ''.  " Refreshing refind disabled
+           ENDIF.
   
         WHEN 'M'.
            PERFORM refresh_grid USING ''.  " Refreshing refind disabled
