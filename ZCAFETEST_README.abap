@@ -11,7 +11,7 @@ REPORT ZCAFETEST_README.
 * by Luis Carles Dura
 * at DBDS 2/14/2025'
 * https://github.com/Luis-Carles/abap-test
-* version 1.1.0
+* version 1.2.0
 *
 
 * -----------Abstract:
@@ -282,7 +282,6 @@ REPORT ZCAFETEST_README.
 *                                                  ZMANAGEMENT_F01
 *                                                  ZMANAGEMENT_O01
 *                                                  ZMANAGEMENT_I01
-
 * UPLOAD METHOD:    DB Search
 *                   Excel File
 
@@ -295,9 +294,27 @@ REPORT ZCAFETEST_README.
 * Screen 100 ------> Display View
 * Screen 200 ------> Management View
 
-
 * -Reading by abstraction help:
-*    |_Lines []
+*    |_Lines [10-32]: Imports
+*    |_Lines [34-35]: Initialization
+*    |_Lines [37-38]: AT-SELECTION-SCREEN OUTPUT
+*    |           |__Hide necessary parameters between different
+*    |              Upload methods: DB Search and Excel Upload.
+*    |
+*    |_Lines [40-41]: AT-SELECTION-SCREEN ON VALUE_REQUEST
+*    |           |__Pop-up browser to choose an uploading excel file.
+*    |
+*    |_Lines [43-63]: AT SELECTION SCREEN (parameter user input)
+*    |     |_Lines [44-45]: Checking given Excel uploading filename.
+*    |     |_Lines [51-55]: View Mode saved into global variable.
+*    |     |_Lines [58-63]: Search Approach for DB Table embedded SQL.
+*    |
+*    |_Lines [65-66]: START OF SELECTION (Main program data retrieval)
+*    |
+*    |_Lines [68-82]: END-OF-SELECTION (Main program execution)
+*          |_Lines [69-71]: Display View from Excel file data.
+*          |_Lines [74-75]: Display View from DB Table data.
+*          |_Lines [76-77]: Management View from DB Table data.
 
 *   .....................
 
@@ -490,9 +507,20 @@ REPORT ZCAFETEST_README.
 *     |_Internal tables: X
 *     |
 *     |_Arquetypical variables:
-*     |   |_____gv_  TYPE
+*     |   |_____gt_fieldcat_slis  TYPE slis_t_fieldcat_alv  slis Field Catalog
+*     |   |
+*     |   |_____gt_fieldcat   TYPE lvc_t_fcat    LVC Field Catalog
+*     |   |_____gs_fieldcat   TYPE lvc_s_fcat    LVC Field Catalog Line
+*     |   |_____gs_scroll     TYPE lvc_t_stbl    LVC Stable refresh variable
+*     |   |_____gs_layout     TYPE lvc_s_layo    LVC Layout
+*     |   |_____gt_toolbar_ex  TYPE ui_functions  Toolbar Exempted Functions
+*     |   |_____gt_colors     TYPE lvc_t_scol    LVC Table of Colors
+*     |   |_____gs_color      TYPE lvc_s_scol    LVC Colors Line
 *     |
-*     |_Object Instances: X
+*     |_Object Instances:
+*         |_____go_dcontainer TYPE REF TO cl_gui_docking_container
+*         |
+*         |_____go_grid       TYPE REF TO cl_gui_alv_grid
 
 
 * ___________Classes and Event Handling CLS:_____________________
@@ -567,11 +595,18 @@ REPORT ZCAFETEST_README.
 *     |
 *     |_Includes: X
 *     |
+*     |_Instances: go_handler TYPE REF TO lcl_handler
+*     |
 *     |_Classes:
 *          |
 *         _|_
 *  UML Class Diagram with expanded method/attribute explanations:
 
+*   +-----------------------------+
+*   |   lcl_handler               |
+*   +-----------------------------+
+*   | + when_data_changed         | (Changed data Dormain Demon)
+*   +-----------------------------+
 
 
 * __________________Soubroutines FXX:____________________________
@@ -763,6 +798,179 @@ REPORT ZCAFETEST_README.
 *    |   ----------------------------------------------------
 *    |                [Program Sections]
 *    |
+*    |_Lines [11-22]: initialize: file name header at selection-screen
+*    |                and adding toolbar buttons functionality.
+*    |
+*    |_Lines [26-42]: selection_screen_output: Hide parameters and
+*    |                search conditions at selection-screen depending
+*    |                of chosen Upload method (Excel or DB Tables).
+*    |
+*    |_Lines [45-65]: get_u_filename: Pop-up browser to get the input
+*    |                uploading excel file from the user.
+*    |
+*    |_Lines [68-86]: check_u_file: Aditional subroutine that verifies
+*    |                the existence of the given excel filename and path.
+*    |   ----------------------------------------------------
+*    |                [GET & MAKE data subroutines]
+*    |
+*    |_Lines [94-162]: get_data: Retrieves data from DB Tables.
+*    |     |
+*    |     |_Lines [98-113]: Non-dynamic conditions Approach select queries
+*    |     |                for non-master. Join of zcorders and zordproducts
+*    |     |
+*    |     |_Lines [117-132]: Non-dynamic conditions Approach select queries
+*    |     |                 for master data.
+*    |     |
+*    |     |_Lines [134-135]: Call to prepare the dynamic conditions strings.
+*    |     |
+*    |     |_Lines [138-144]: Dynamic conditions Approach select queries
+*    |     |                 for non-master. Join of zcorders and zordproducts
+*    |     |
+*    |     |_Lines [148-159]: Dynamic conditions Approach select queries
+*    |                        for master data.
+*    |
+*    |_Lines [166-211]: make_data: With the retrieved rows as starting point,
+*    |     |           loops through the results table filling empty fields
+*    |     |           that required extra proccesing or where derivated from
+*    |     |           DB tables data instead of being present in them.
+*    |     |
+*    |     |_Lines [172-181]: Looking for a coincidence in clients master
+*    |     |                internal table and subsequent adding client fields.
+*    |     |
+*    |     |_Lines [183-194]: Looking for a coincidence in products master
+*    |     |                internal table and subsequent adding product fields.
+*    |     |
+*    |     |_Lines [196-208]: Derivated fields, color scheme and modify sentence
+*    |                        for that particular row up to results table.
+*    |
+*    |_Lines [214-330]: dynamic_conditions: With the inputs parameters from the,
+*    |                 user as starting point, creates dynamically the WHERE
+*    |                 conditions clausule for dynamic search approach.
+*    |
+*    |_Lines [333-366]: get_data_excel: Retrieves data from excel file.
+*    |     |
+*    |     |_Lines [342-359]: Call to external function that extracts raw data
+*    |                       from excel file and store it inside an internal table.
+*    |
+*    |_Lines [369-501]: make_data_excel: With the raw data internal table result of
+*    |     |                            previous method as starting point, transfer
+*    |     |                            each field to results table. Reformat if needed.
+*    |     |
+*    |     |_Lines [370-382]: Local variables declaration and color scheme charge call.
+*    |     |
+*    |     |_Lines [385-393]: Detects a new row instead of a field for the previous one,
+*    |     |                 appending the finished one and preparing for the next.
+*    |     |
+*    |     |_Lines [395-412]: Transfer to results table of Key & client fields as they are.
+*    |     |
+*    |     |_Lines [414-459]: Transfer to results table of DATE and TIME fields. Here
+*    |     |                  reformating to YYYYMMDD / HHMMSS may be necessary.
+*    |     |
+*    |     |_Lines [461-494]: Transfer to results table of derivated & order & product
+*    |                        fields. In QUAN fields ',' must be removed.
+*    |
+*    |_Lines [505-528]: search_order_list: Subroutine that makes the calls to the
+*    |     |                            necessary get&make data forms and is called from
+*    |     |                            outside.
+*    |     |
+*    |     |_Lines [507-510]: Excel get & make data methods calls.
+*    |     |
+*    |     |_Lines [513-527]: Get & make data method calls for default DB Table search.
+*    |   ----------------------------------------------------
+*    |                [ALV GRID SUBROUTINES]
+*    |
+*    |_Lines [534-549]: create_dcontainer: ALV GRID docking container creation.
+*    |
+*    |_Lines [552-567]: create_grid: ALV GRID grid creation.
+*    |
+*    |_Lines [650-668]: create_layout: ALV GRID layout creation. Zebra pattern, optimize
+*    |                                 column width and column/row selection. Edit enabled
+*    |                                 only in Management View.
+*    |
+*    |_Lines [671-809]: custom_colors: LVC colors table preparation. Blue for Key fields,
+*    |                                 Red for Client fields, Yellow for Order fields,
+*    |                                 Green for product fields and Orange for currency/unit.
+*    |
+*    |_Lines [812-981]: custom_fieldcat: LVC Fieldcatalog preparation. Order_ID, Order_count
+*    |                                 Reg_status, Waers and Meins are not editable.
+*    |
+*    |_Lines [984-1017]: create_fieldcat: SLIS Fieldcatalog creation and subsequent conversion
+*    |                                 to LVC FieldCatalog.
+*    |
+*    |_Lines [1020-1031]: custom_toolbar: Exclude non-used functions from ALV GRID toolbar.
+*    |
+*    |_Lines [1034-1046]: display_grid: Call for external method that display data in the grid
+*    |                                  for the first time.
+*    |
+*    |_Lines [1050-1066]: refresh_grid: Refresh the ALV GRID.
+*    |     |
+*    |     |_Lines [1051-1054]: Hard Refresh, re-retrive data from DB Tables.
+*    |     |
+*    |     |_Lines [1057-1065]: Call for external function to refresh grid and flush.
+*    |
+*    |_Lines [1070-1091]: alv_write: Subroutine that displays information in ALV GRID.
+*    |     |
+*    |     |_Lines [1071-1077]: Displays for the first Time -> Creates every ALV Object.
+*    |     |
+*    |     |_Lines [1080-1085]: Display View hard and soft refresh calls.
+*    |     |
+*    |     |_Lines [1087-1090]: Management View soft refresh call.
+*    |   ----------------------------------------------------
+*    |                [DB TABLES PERSISTANCE SUBROUTINES]
+*    |
+*    |_Lines [1097-1120]: insert_row: New row insertion in DB Tables. It also prepares
+*    |                                every field not up to be edited from the ALV GRID.
+*    |
+*    |_Lines [1122-1172]: delete_row: Delete Management View selected rows in DB Tables.
+*    |     |
+*    |     |_Lines [1123-1126]: Local variables for selected rows in ALV GRID.
+*    |     |
+*    |     |_Lines [1129-1130]: Call to external function to get selected rows in ALV GRID.
+*    |     |
+*    |     |_Lines [1132-1143]: Call to external function to confirm by Pop-up the deletion.
+*    |     |
+*    |     |_Lines [1145-1161]: Deletions sentences over DB Tables.
+*    |     |_Lines [1169-1171]: Deletions sentences over Internal Results table.
+*    |
+*    |_Lines [1176-1249]: validate_check: Check given values prior to any saving method in DB.
+*    |     |
+*    |     |_Lines [1177-1182]: Local variables validation check.
+*    |     |
+*    |     |_Lines [1186-1188]: Call to external function to recollect any changes and apply
+*    |     |                    them to results table before saving.
+*    |     |
+*    |     |_Lines [1190-1201]: Call to external function to confirm by Pop-up the saving.
+*    |     |
+*    |     |_Lines [1210-1217]: Loops through new or changed rows in results table checking
+*    |     |                    input product data.
+*    |     |
+*    |     |_Lines [1220-1226]: Loops through new or changed rows in results table checking
+*    |     |                    input client data.
+*    |     |
+*    |     |_Lines [1229-1246]: Loops through new or changed rows in results table checking
+*    |                          input product data.
+*    |
+*    |_Lines [1252-1386]: save_changes: Save Management View changes into DB Tables.
+*    |     |
+*    |     |_Lines [1253-1254]: Call to previous input validation check subroutine.
+*    |     |
+*    |     |_Lines [1266-1275]: Changes on ZCLIENTS: Old client order_count update.
+*    |     |
+*    |     |_Lines [1278-1288]: Changes on ZCLIENTS: New client id calculation and insert.
+*    |     |
+*    |     |_Lines [1295-1306]: Changes on ZPRODUCTS: Old product details update.
+*    |     |
+*    |     |_Lines [1308-1322]: Changes on ZPRODUCTS: New product id calculation and insert.
+*    |     |
+*    |     |_Lines [1326-1336]: Changes on ZCORDERS:  New Closed Order data insert.
+*    |     |
+*    |     |_Lines [1340-1353]: Changes on ZORDPRODUCTS: New Order Product row insert and
+*    |     |                                             disable changed and new flags.
+*    |     |
+*    |     |_Lines [1361-1374]: Changes on ZPRODUCTS: Old Order product details update and
+*    |                                                disable changed and new flags.
+*    |
+*    |_Lines [1389-1406]: clearing: Clear Global variables and liberate memory space.
 
 
 * __________________PBO and PAI Logic:____________________________
@@ -775,7 +983,7 @@ REPORT ZCAFETEST_README.
 *    |   ----------------------------------------------------
 *    |                [Status modules]
 *    |
-*    |_Lines [5-59]: Screens 100-330 status stup modules. They link
+*    |_Lines [5-59]: Screens 100-330 status setup modules. They link
 *    |               every window with its specific status.
 *    |
 *    |_Lines [61-71]: create_order_230(): creates an order from
@@ -890,7 +1098,19 @@ REPORT ZCAFETEST_README.
 *    |   ----------------------------------------------------
 *    |                [Status modules]
 *    |
-*    |_Lines []:
+*    |_Lines [5-8]: status_100: Screen 100 status setup modules. They link
+*    |               it with its specific GUI status and GUI Title.
+*    |
+*    |_Lines [14-17]: status_200: Screen 200 status setup modules. They link
+*    |               it with its specific GUI status and GUI Title.
+*    |   ----------------------------------------------------
+*    |                [Write modules]
+*    |
+*    |_Lines [10-12]: alv_write_100: Screen 100 display grid initial call to
+*    |               ALV GRID write subroutine in ZMANAGEMENT_F01.
+*    |
+*    |_Lines [19-21]: alv_write_200: Screen 200 display grid initial call to
+*                    ALV GRID write subroutine in ZMANAGEMENT_F01.
 
 *   .....................
 
@@ -902,8 +1122,27 @@ REPORT ZCAFETEST_README.
 *    |   ----------------------------------------------------
 *    |                [Initial Screen]         Action:
 *    |
-*    |_Lines []: user_command_100:
-*                        |_____ZREFRESH      Refreshes the Grid
+*    |_Lines [8-21]: user_command_100:
+*    |                   |_____ZREFRESH      ->Refreshes the Grid
+*    |
+*    |_Lines [23-55]: exit_command_100:
+*    |                   |_____BACK,CANCEL   Return to Selection-Screen
+*    |                   |                   + Clear global var.
+*    |                   |_____EXIT          Exit Program
+*    |
+*    |_Lines [60-84]: user_command_200:
+*    |                   |_____ZREFRESH      ->Refreshes the Grid
+*    |                   |_____ZADD          ->Append new Row
+*    |                   |                   + Clear global var.
+*    |                   |_____ZDELETE       ->Delete selected rows from DB
+*    |                   |                   + Clear global var.
+*    |                   |_____ZSAVE         ->Save changes into DB table
+*    |                                       + Clear global var.
+*    |
+*    |_Lines [86-116]: exit_command_200:
+*                        |_____BACK,CANCEL   Return to Selection-Screen
+*                        |                   + Clear global var.
+*                        |_____EXIT          Exit Program
 
 
 * ___________Screen-Selection Input Logic SCR:____________________
@@ -943,7 +1182,7 @@ REPORT ZCAFETEST_README.
 *    |                   |
 *    |                   |_____p_cid      Existing Client ID
 *    |   ----------------------------------------------------
-*    |                [Block 2]
+*    |                [Block 3]
 *    |
 *    |_Lines [28-33]:
 *    |            |___Parameters:
@@ -973,5 +1212,68 @@ REPORT ZCAFETEST_README.
 * Search Approach, as well with the search conditions if needed.
 
 * -Reading by abstraction help:
+*    |   ----------------------------------------------------
+*    |                [Block 1] (Always Visible)
 *    |
-*    |_Lines []:
+*    |_Lines [7-10]:
+*    |            |___Radiobuttons:
+*    |                   |_____r_sear     DB Search Upload Method  (Default)
+*    |                   |_____r_exce     Excel File upload Method
+*    |
+*    |   ----------------------------------------------------
+*    |                [Block 2] (Visible if SearchDB)
+*    |
+*    |_Lines [14-29]:
+*    |            |___Select-options:
+*    |                   |_____s_ordid    Order Id
+*    |                   |_____s_clid     Client Id
+*    |                   |_____s_cname    Client Name
+*    |                   |_____s_clname   Client Last Name
+*    |                   |_____s_ocount   Client Order Count
+*    |                   |_____s_odate    Order Date
+*    |                   |_____s_otime    Order Time
+*    |                   |_____s_total    Order Total
+*    |                   |_____s_paym     Order Payment Method
+*    |                   |_____s_proid    Product Id
+*    |                   |_____s_pname    Product Name
+*    |                   |_____s_pprice   Product Price
+*    |                   |_____s_stock    Product Stock
+*    |                   |_____s_pquan    Order Product Quantity
+*    |
+*    |   ----------------------------------------------------
+*    |                [Block 3]  (Visible if SearchDB)
+*    |
+*    |_Lines [31-41]:
+*    |            |___Radiobuttons:
+*    |                   |_____r_dis      Display View (Default)
+*    |                   |_____r_mng      Management View
+*    |
+*    |   ----------------------------------------------------
+*    |                [*Block 4] (Visible if SearchDB)
+*    |
+*    |_Lines [43-68]:
+*    |            |___Radiobuttons:
+*    |                   |_____*r_ov      Overall  (Default)
+*    |                   |_____*r_cl      Initial Table: zclients
+*    |                   |_____*r_co      Initial Table: zcorders
+*    |                   |_____*r_pr      Initial Table: zproducts
+*    |                   |_____*r_op      Initial Table: zordproducts
+*    |
+*    |   ----------------------------------------------------
+*    |                [Block 5]  (Visible if SearchDB)
+*    |
+*    |_Lines [70-73]:
+*    |            |___Radiobuttons:
+*    |                   |_____r_ndyn     Non-Dynamic Cond. Approach (Default)
+*    |                   |_____r_dyn      Dynamic Conditions Approach
+*    |
+*    |   ----------------------------------------------------
+*    |                [Block 6]  (Visible if Excel file Upload)
+*    |
+*    |_Lines [77-79]:
+*    |            |___Parameters:
+*    |                   |_____p_ufile    Uploading Excel File Path
+*    | 
+*    |    ----------------------------------------------------
+*    | 
+*    |_Lines [81]: *Function Key 1: for additional toolbar buttons.
