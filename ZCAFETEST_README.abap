@@ -11,7 +11,7 @@ REPORT ZCAFETEST_README.
 * by Luis Carles Dura
 * at DBDS 2/14/2025'
 * https://github.com/Luis-Carles/abap-test
-* version 1.2.0
+* version 1.2.1
 *
 
 * -----------Abstract:
@@ -278,8 +278,10 @@ REPORT ZCAFETEST_README.
 *                                      It includes <CL_ALV_CONTROL>
 *                                                  ZMANAGEMENT_TOP
 *                                                  ZMANAGEMENT_ALV
+*                                                  ZMANAGEMENT_CLS
 *                                                  ZMANAGEMENT_SCR
 *                                                  ZMANAGEMENT_F01
+*                                                  ZMANAGEMENT_F02
 *                                                  ZMANAGEMENT_O01
 *                                                  ZMANAGEMENT_I01
 * UPLOAD METHOD:    DB Search
@@ -295,26 +297,28 @@ REPORT ZCAFETEST_README.
 * Screen 200 ------> Management View
 
 * -Reading by abstraction help:
-*    |_Lines [10-32]: Imports
-*    |_Lines [34-35]: Initialization
-*    |_Lines [37-38]: AT-SELECTION-SCREEN OUTPUT
+*    |_Lines [10-35]: Imports
+*    |_Lines [37-38]: Initialization
+*    |_Lines [40-41]: AT-SELECTION-SCREEN OUTPUT
 *    |           |__Hide necessary parameters between different
 *    |              Upload methods: DB Search and Excel Upload.
 *    |
-*    |_Lines [40-41]: AT-SELECTION-SCREEN ON VALUE_REQUEST
+*    |_Lines [43-44]: AT-SELECTION-SCREEN ON VALUE_REQUEST
 *    |           |__Pop-up browser to choose an uploading excel file.
 *    |
-*    |_Lines [43-63]: AT SELECTION SCREEN (parameter user input)
-*    |     |_Lines [44-45]: Checking given Excel uploading filename.
-*    |     |_Lines [51-55]: View Mode saved into global variable.
-*    |     |_Lines [58-63]: Search Approach for DB Table embedded SQL.
+*    |_Lines [46-84]: AT SELECTION SCREEN (parameter user input)
+*    |     |_Lines [47-48]: Checking given Excel uploading filename.
+*    |     |_Lines [53-58]: View Mode saved into global variable.
+*    |     |_Lines [61-65]: Search Approach for DB Table embedded SQL.
+*    |     |_Lines [68-76]: Variables Approach for extra Search approaches.
+*    |     |_Lines [79-83]: SELECT JOIN Approach saved into global variable.
 *    |
-*    |_Lines [65-66]: START OF SELECTION (Main program data retrieval)
+*    |_Lines [86-87]: START OF SELECTION (Main program data retrieval)
 *    |
-*    |_Lines [68-82]: END-OF-SELECTION (Main program execution)
-*          |_Lines [69-71]: Display View from Excel file data.
-*          |_Lines [74-75]: Display View from DB Table data.
-*          |_Lines [76-77]: Management View from DB Table data.
+*    |_Lines [89-103]: END-OF-SELECTION (Main program execution)
+*          |_Lines [91-93]: Display View from Excel file data.
+*          |_Lines [95-96]: Display View from DB Table data.
+*          |_Lines [97-98]: Management View from DB Table data.
 
 *   .....................
 
@@ -342,12 +346,12 @@ REPORT ZCAFETEST_README.
 * ZMANAGEMENT_PROGRAM       ZMAIN_PROGRAM                ZMP_CAFETEST
 * |                         |                      _     |
 * |__ZMANAGEMENT_TOP        |__ZMAIN_TOP            }    |__ZMP_CAFETEST_TOP
-* |                         |                       }____|_______|
-* |__ZMANAGEMENT_ALV        |__ZMAIN_CLS            }    |
-* |                         |    |                  }    |
-* |__ZMANAGEMENT_SCR        |    |__ZMAIN_F01       }    |__ZMAIN_F03
-* |                         |                       }    |
-* |__ZMANAGEMENT_F01        |__ZMAIN_F02           _}    |
+* |__ZMANAGEMENT_ALV        |                       }____|_______|
+* |__ZMANAGEMENT_CLS        |__ZMAIN_CLS            }    |
+* |__ZMANAGEMENT_SCR        |    |                  }    |
+* |                         |    |__ZMAIN_F01       }    |__ZMAIN_F03
+* |__ZMANAGEMENT_F01             |                       }    |
+* |__ZMANAGEMENT_F02        |__ZMAIN_F02           _}    |
 * |__ZMANAGEMENT_O01        |                            |__ZMP_CAFETEST_O01
 * |__ZMANAGEMENT_I01        |__ZMAIN_SCR                 |__ZMP_CAFETEST_I01
 
@@ -475,6 +479,10 @@ REPORT ZCAFETEST_README.
 *     |   |_____gv_mode     TYPE CHAR1   ALV GRID View Mode
 *     |   |
 *     |   |_____gv_approach TYPE CHAR2   Data Search Approach
+*     |   |
+*     |   |_____gv_variables TYPE CHAR2   Variables Approach for extra Searches
+*     |   |
+*     |   |_____gv_join     TYPE CHAR1   SELECT JOIN Approach for extra Searches
 *     |   |
 *     |   |_____gv_where    TYPE string  dynamic conditions string
 *     |   |
@@ -972,6 +980,18 @@ REPORT ZCAFETEST_README.
 *    |
 *    |_Lines [1389-1406]: clearing: Clear Global variables and liberate memory space.
 
+*   .....................
+
+* -ZMANAGEMENT_F02: Contains every extra subroutine for getting
+* and making the data from DB Tables with extra Search options derivated
+* from adding the option to choose variables and SELECT JOIN approches.
+
+* -Reading by abstraction help:
+*    |   ----------------------------------------------------
+*    |                [Program Sections]
+*    |
+*    |_Lines [-]:
+
 
 * __________________PBO and PAI Logic:____________________________
 
@@ -1273,7 +1293,24 @@ REPORT ZCAFETEST_README.
 *    |_Lines [77-79]:
 *    |            |___Parameters:
 *    |                   |_____p_ufile    Uploading Excel File Path
-*    | 
+*    |
+*    |   ----------------------------------------------------
+*    |                [Block 7]  (Visible if Search DB)
+*    |
+*    |_Lines [81-86]:
+*    |            |___Radiobuttons:
+*    |                   |_____r_data      DATA Variables approach  (Default)
+*    |                   |_____r_type      TYPES Variables approach
+*    |                   |_____r_line      TYPES + Line Variables approach
+*    |                   |_____r_fsym      <FIELD-SYMBOLS> pointer approach
+*    |
 *    |    ----------------------------------------------------
-*    | 
-*    |_Lines [81]: *Function Key 1: for additional toolbar buttons.
+*    |                [Block 8]  (Visible if Search DB)
+*    |
+*    |_Lines [88-91]:
+*    |            |___Radiobuttons:
+*    |                   |_____r_inner     INNER JOIN   (Default)
+*    |                   |_____r_outer     LEFT OUTER JOIN
+*    |
+*    |    ----------------------------------------------------
+*    |_Lines [93]: *Function Key 1: for additional toolbar buttons.

@@ -23,9 +23,20 @@ TABLES: SSCRFIELDS.   " Selection-Screen Fields Table
 
 " SEARCH APPROACH:  ND: Non-Dynamic Conditions
 "                   DY: Dynamic Conditions
+
+" VARIABLES APPROACH:  DA: DATA
+"                      TY: TYPES
+"                      LI: TYPES + Line variables
+"                      FS: <FIELD-SYMBOLS>
+
+" JOIN APPROACH:    I: INNER JOIN
+"                   O: LEFT OUTER JOIN
+
 DATA: gv_mode       TYPE CHAR1 VALUE 'D',  " View Mode
 *      gv_init_tab   TYPE CHAR2 VALUE 'OV', " Initial table
       gv_approach   TYPE CHAR2 VALUE 'ND', " Search data approach
+      gv_variables  TYPE CHAR2 VALUE 'DA', " GLobal Variables approach
+      gv_join       TYPE CHAR1 VALUE 'I',  " SELECT approach
       gv_where      TYPE string,           " Dynamic Conditions strings
       gv_where_cl   TYPE string,
       gv_where_pr   TYPE string,

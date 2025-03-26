@@ -25,6 +25,9 @@ INCLUDE ZMANAGEMENT_SCR.
 " Soubroutines import
 INCLUDE ZMANAGEMENT_F01.
 
+" Extra SELECT approaches
+INCLUDE ZMANAGEMENT_F02.
+
 " PBO Modules import
 INCLUDE ZMANAGEMENT_O01.
 
@@ -60,10 +63,28 @@ AT SELECTION-SCREEN.
     ELSEIF r_mng = 'X'.
       gv_approach = 'DY'.
     ENDIF.
+
+    " Variables approach Selection radiobutton
+    IF r_data = 'X'.
+      gv_variables = 'DA'.
+    ELSEIF r_type = 'X'.
+      gv_variables = 'TY'.
+    ELSEIF r_line = 'X'.
+      gv_variables = 'LI'.
+    ELSEIF r_fsym = 'X'.
+      gv_variables = 'FS'.
+    ENDIF.
+
+    " SELECT approach Selection radiobutton
+    IF r_inner = 'X'.
+      gv_join = 'I'.
+    ELSEIF r_outer = 'X'.
+      gv_join = 'O'.
+    ENDIF.
   ENDIF.
 
 START-OF-SELECTION.
-  PERFORM search_order_list.      " Get & Make Data
+  PERFORM search_order_list_ext.  " Get & Make Data
 
 END-OF-SELECTION.
   IF gt_results[] IS NOT INITIAL.
