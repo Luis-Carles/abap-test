@@ -44,7 +44,10 @@ DATA: gv_mode       TYPE CHAR1 VALUE 'D',  " View Mode
       ok_code       TYPE sy-ucomm,         " messing with sy-ucomm
       gv_check      TYPE STA_TEXT,         " Check input flag
       gv_save       TYPE STA_TEXT,         " Save flag
-      gv_delete     TYPE STA_TEXT.         " Delete flag
+      gv_delete     TYPE STA_TEXT,         " Delete flag
+      gv_high_clid  TYPE i,                " Highest Client Id in DB
+      gv_high_prid  TYPE i,                " Highest Product Id in DB
+      gv_high_orid  TYPE i.                " Highest Order Id in DB
 
 "_______________________________________________________________________
 " Internal tables and Structures Declaration
@@ -58,6 +61,18 @@ DATA: gt_results      TYPE TABLE OF ZST_RESULT, " Results structure
       gs_zcorder      TYPE zcorders,            " Orders Row
 *      gt_zordproducts TYPE TABLE OF zordproducts,
       gs_zordproduct  TYPE zordproducts.        " List of Products Row
+
+TYPES: BEGIN OF ty_client_id,
+          CLIENT_ID TYPE zclients-CLIENT_ID,
+          ORDER_COUNT TYPE zclients-ORDER_COUNT,
+       END OF ty_client_id.
+TYPES: BEGIN OF ty_prod_id,
+          PROD_ID TYPE zproducts-PROD_ID,
+       END OF ty_prod_id.
+DATA: gt_client_ids   TYPE HASHED TABLE OF ty_client_id  " Every present client id inDB Table
+                          WITH UNIQUE KEY CLIENT_ID,
+      gt_prod_ids     TYPE HASHED TABLE OF ty_prod_id    " Every present product id in DB Table
+                          WITH UNIQUE KEY PROD_ID.
 
 "_______________________________________________________________________
 " Master Data tables

@@ -848,7 +848,7 @@ FORM initialize.
           gs_fieldcat-coltext    = TEXT-C03.
           gs_fieldcat-col_pos    = 4.
           IF gv_mode = 'M'.
-            gs_fieldcat-edit = 'X'.
+            gs_fieldcat-edit = 'X'. gs_fieldcat-lowercase = 'X'.
           ENDIF.
   
         WHEN 'CLIENT_LAST_NAME'.          " Client Last Name
@@ -858,7 +858,7 @@ FORM initialize.
           gs_fieldcat-coltext    = TEXT-C04.
           gs_fieldcat-col_pos    = 5.
           IF gv_mode = 'M'.
-            gs_fieldcat-edit = 'X'.
+            gs_fieldcat-edit = 'X'. gs_fieldcat-lowercase = 'X'.
           ENDIF.
   
         WHEN 'ORDER_COUNT'.               " Client Order Count
@@ -919,7 +919,7 @@ FORM initialize.
           gs_fieldcat-coltext    = TEXT-C11.
           gs_fieldcat-col_pos    = 12.
           IF gv_mode = 'M'.
-            gs_fieldcat-edit = 'X'.
+            gs_fieldcat-edit = 'X'. gs_fieldcat-lowercase = 'X'.
           ENDIF.
   
         WHEN 'PROD_NAME'.                " Product Name
@@ -929,7 +929,7 @@ FORM initialize.
           gs_fieldcat-coltext    = TEXT-C13.
           gs_fieldcat-col_pos    = 13.
           IF gv_mode = 'M'.
-            gs_fieldcat-edit = 'X'.
+            gs_fieldcat-edit = 'X'. gs_fieldcat-lowercase = 'X'.
           ENDIF.
   
         WHEN 'PROD_PRICE'.               " Product Price
@@ -1050,7 +1050,7 @@ FORM initialize.
   FORM refresh_grid USING iv_refind TYPE CHAR1.
     IF iv_refind = 'X'.
       " Re retrieve data from DB Tables:
-      PERFORM search_order_list.
+      PERFORM search_order_list_ext.
     ENDIF.
   
     " Refresh the grid
@@ -1090,15 +1090,19 @@ FORM initialize.
     ENDIF.
   ENDFORM.
   
+  "___________________________________________________________________
+  "________________DB TABLES PERSISTANCE SUBROUTINES__________________
+  "___________________________________________________________________
+  
   FORM insert_row.
     DATA: lv_order_id   TYPE i.
     CLEAR gs_result.
   
     " Fields not up to edit:
-    " Order ID
-    READ TABLE gt_results INTO DATA(ls_result) INDEX LINES( gt_results ).
-    gs_result-ORDER_ID = ls_result-ORDER_ID + 1.
-  
+    gs_result-ORDER_CLIENT = gv_high_clid + 1. " Client ID
+    gv_high_orid = gv_high_orid + 1.
+    gs_result-ORDER_ID = gv_high_orid. " Order ID
+    gs_result-PROD_ID = gv_high_prid + 1. "Prod ID
     " Regular status and Currency/Unit
     gs_result-REG_STATUS = 'Sporadic Client'.
     gs_result-WAERS      = 'EUR'.
@@ -1204,19 +1208,19 @@ FORM initialize.
   
       " Check for introduced product data
       IF gs_result-PROD_NAME   IS INITIAL OR gs_result-PROD_PRICE  IS INITIAL OR
-         gs_result-PROD_STOCK  IS INITIAL .
+         gs_result-PROD_STOCK  IS INITIAL OR gs_result-PROD_ID IS INITIAL OR gs_result-PROD_ID <= 0.
   
         GV_CHECK = 'E'.
-        lv_message = 'When introducing a product please input Name / Price / Stock'.
+        lv_message = 'When introducing a product please input valid ID / Name / Price / Stock'.
         MESSAGE lv_message TYPE 'E'.
         EXIT.
       ENDIF.
   
       " Check for introduced client data
-      IF gs_result-CLIENT_NAME IS INITIAL OR gs_result-CLIENT_LAST_NAME IS INITIAL.
-  
+      IF gs_result-CLIENT_NAME IS INITIAL OR gs_result-CLIENT_LAST_NAME IS INITIAL OR
+         gs_result-ORDER_CLIENT IS INITIAL OR gs_result-ORDER_CLIENT = 0.
         GV_CHECK = 'E'.
-        lv_message = 'When introducing a client please input both Name / Lastname'.
+        lv_message = 'When introducing a client please input an ID / Name / Lastname'.
         MESSAGE lv_message TYPE 'E'.
         EXIT.
       ENDIF.
@@ -1231,14 +1235,14 @@ FORM initialize.
         EXIT.
       ENDIF.
   
-      IF gs_result-TOTAL <> ( gs_result-PROD_QUANTITY * gs_result-PROD_PRICE ) OR
-         ( gs_result-TOTAL < 45 AND ( gs_result-TOTAL <> ( gs_result-PROD_QUANTITY * gs_result-PROD_PRICE ) / 2 )
-         AND gs_result-ORDER_COUNT MOD 3 = 0 ).
-  
-        GV_CHECK = 'E'.
-        lv_message = 'The introduced total:' + gs_result-TOTAL + ', Is not consitent with the product list.' .
-        MESSAGE lv_message TYPE 'E'.
-        EXIT.
+      IF gs_result-TOTAL <> ( gs_result-PROD_QUANTITY * gs_result-PROD_PRICE ).
+        IF NOT ( gs_result-TOTAL = ( gs_result-PROD_QUANTITY * gs_result-PROD_PRICE ) / 2
+                AND  gs_result-TOTAL < 45 AND gs_result-ORDER_COUNT MOD 3 = 0 ).
+          GV_CHECK = 'E'.
+          lv_message = 'The introduced total is not consitent with the product list.' .
+          MESSAGE lv_message TYPE 'E'.
+          EXIT.
+        ENDIF.
       ENDIF.
     ENDLOOP.
   
@@ -1246,6 +1250,8 @@ FORM initialize.
   
   " Subroutine that save changes into the Internal and DB tables.
   FORM save_changes.
+    FIELD-SYMBOLS: <FS_CLIENT_KEY> TYPE ty_client_id.
+  
     PERFORM validate_check.
     CHECK gv_check IS INITIAL.
   
@@ -1259,38 +1265,38 @@ FORM initialize.
         IF gs_result-flag_NEW = 'X'.
           "________________________________________________________
           " CHANGES ON zclients
-          READ TABLE gt_master_clients INTO DATA(ls_client)
-          WITH KEY CLIENT_ID = gs_result-ORDER_CLIENT
-          BINARY SEARCH.
+          READ TABLE gt_client_ids WITH KEY CLIENT_ID = gs_result-ORDER_CLIENT
+          ASSIGNING <FS_CLIENT_KEY>. "BINARY SEARCH.
           IF sy-subrc = 0.
-            gs_result-ORDER_COUNT = gs_result-ORDER_COUNT + 1.
-            UPDATE zclients SET order_count = gs_result-ORDER_COUNT
-              WHERE client_id = gs_result-ORDER_CLIENT.
+            gs_result-ORDER_COUNT = <FS_CLIENT_KEY>-ORDER_COUNT + 1.
+            IF gs_result-ORDER_COUNT > 5. gs_result-REG_STATUS = 'Regular Client'.
+            ENDIF.
+            UPDATE zclients SET order_count = gs_result-ORDER_COUNT WHERE client_id = gs_result-ORDER_CLIENT.
             IF sy-subrc <> 0.
               gv_save = 'E'.
             ENDIF.
   
           ELSE.
-            READ TABLE gt_master_clients INTO DATA(ls_new_client) INDEX LINES( gt_master_clients ).
-            IF sy-subrc = 0.
-              gs_result-ORDER_CLIENT = ls_new_client-CLIENT_ID + 1.
-              gs_zclient-CLIENT_ID = gs_result-ORDER_CLIENT.
-              gs_zclient-CLIENT_NAME = gs_result-CLIENT_NAME.
-              gs_zclient-CLIENT_LAST_NAME = gs_result-CLIENT_LAST_NAME.
-              gs_zclient-ORDER_COUNT = 1.
-              INSERT INTO zclients VALUES gs_zclient.
-              IF sy-subrc <> 0.
-                gv_save = 'E'.
-              ENDIF.
+            gv_high_clid = gv_high_clid + 1.
   
+            gs_result-ORDER_CLIENT = gv_high_clid.
+            gs_zclient-CLIENT_ID = gs_result-ORDER_CLIENT.
+            gs_zclient-CLIENT_NAME = gs_result-CLIENT_NAME.
+            gs_zclient-CLIENT_LAST_NAME = gs_result-CLIENT_LAST_NAME.
+            gs_zclient-ORDER_COUNT = 1.
+            INSERT INTO zclients VALUES gs_zclient.
+            IF sy-subrc <> 0.
+              gv_save = 'E'.
             ENDIF.
+  
+  
           ENDIF.
   
          "_________________________________________________________
          " CHANGES ON zproduct
-          READ TABLE gt_master_products INTO DATA(ls_product)
-          WITH KEY PROD_ID = gs_result-PROD_ID
-          BINARY SEARCH.
+          READ TABLE gt_prod_ids WITH KEY PROD_ID = gs_result-PROD_ID
+          TRANSPORTING NO FIELDS. "BINARY SEARCH.
+  
           IF sy-subrc = 0.
             gs_result-PROD_STOCK = gs_result-PROD_STOCK - gs_result-PROD_QUANTITY.
             UPDATE zproducts SET prod_quantity = gs_result-PROD_STOCK
@@ -1301,20 +1307,20 @@ FORM initialize.
               gv_save = 'E'.
             ENDIF.
           ELSE.
-            READ TABLE gt_master_products INTO DATA(ls_new_product) INDEX LINES( gt_master_products ).
-            IF sy-subrc = 0.
-              gs_result-PROD_ID = ls_new_product-PROD_ID + 1.
-              gs_zproduct-PROD_ID = gs_result-PROD_ID.
-              gs_zproduct-PROD_NAME = gs_result-PROD_NAME.
-              gs_zproduct-PROD_PRICE = gs_result-PROD_PRICE.
-              gs_zproduct-PROD_QUANTITY = gs_result-PROD_STOCK - gs_result-PROD_QUANTITY.
-              gs_zproduct-MEINS = gs_result-MEINS.
-              gs_zproduct-WAERS = gs_result-WAERS.
-              INSERT INTO zproducts VALUES gs_zproduct.
-              IF sy-subrc <> 0.
-                gv_save = 'E'.
-              ENDIF.
+            gv_high_prid = gv_high_prid + 1.
+  
+            gs_result-PROD_ID =  gv_high_prid.
+            gs_zproduct-PROD_ID = gs_result-PROD_ID.
+            gs_zproduct-PROD_NAME = gs_result-PROD_NAME.
+            gs_zproduct-PROD_PRICE = gs_result-PROD_PRICE.
+            gs_zproduct-PROD_QUANTITY = gs_result-PROD_STOCK - gs_result-PROD_QUANTITY.
+            gs_zproduct-MEINS = gs_result-MEINS.
+            gs_zproduct-WAERS = gs_result-WAERS.
+            INSERT INTO zproducts VALUES gs_zproduct.
+            IF sy-subrc <> 0.
+              gv_save = 'E'.
             ENDIF.
+  
           ENDIF.
   
           "________________________________________________________

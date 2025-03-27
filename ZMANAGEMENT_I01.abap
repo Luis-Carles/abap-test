@@ -63,7 +63,7 @@ MODULE user_command_200 INPUT.
 
   CASE gv_code.
     WHEN 'ZREFRESH'.
-      PERFORM refresh_grid USING ''.
+      PERFORM refresh_grid USING 'X'.
 
     WHEN 'ZADD'.
       PERFORM insert_row.
@@ -73,12 +73,12 @@ MODULE user_command_200 INPUT.
     WHEN 'ZDELETE'.
       PERFORM delete_row.
 
-      PERFORM refresh_grid USING ''.
+      PERFORM refresh_grid USING 'X'.
 
     WHEN 'ZSAVE'.
       PERFORM save_changes.
 
-      PERFORM refresh_grid USING ''.
+      PERFORM refresh_grid USING 'X'.
   ENDCASE.
 
 ENDMODULE.

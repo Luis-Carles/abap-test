@@ -454,23 +454,40 @@ REPORT ZCAFETEST_README.
 *     |_DB. Tables: zproducts, zclients, zcorders, zordproducts,
 *     |             SSCRFIELDS (Selection-Screen Fields Table).
 *     |
+*     |_Types:
+*     |   |_____ty_client_id
+*     |   |          |_______CLIENT_ID    TYPE zclients-CLIENT_ID
+*     |   |          |_______ORDER_COUNT  TYPE zclients-ORDER_COUNT
+*     |   |
+*     |   |_____ty_prod_id
+*     |              |_______PROD_ID     TYPE zproducts-PROD_ID
+*     |
 *     |_Internal tables:
 *     |   |__gt_results: standard table of ZST_RESULT to store
-*     |   |              every fetched row to display in ALV GRID
+*     |   |              every fetched row to display (Filtered by conditions)
 *     |   |
 *     |   |__gt_master_clients: sorted table of clients master table
-*     |   |          |          data information
+*     |   |          |          data information (Filtered by conditions)
 *     |   |          |__CLIENT_ID        LIKE zclients-CLIENT_ID
 *     |   |          |__CLIENT_NAME      LIKE zclients-CLIENT_NAME
 *     |   |          |__CLIENT_LAST_NAME LIKE zclients-CLIENT_LAST_NAME
 *     |   |          |__ORDER_COUNT      LIKE zclients-ORDER_COUNT
 *     |   |
 *     |   |__gt_master_clients: sorted table of products master table
-*     |   |          |          data information
+*     |   |          |          data information (Filtered by conditions)
 *     |   |          |__PROD_ID          LIKE zproducts-PROD_ID
 *     |   |          |__PROD_NAME        LIKE zproducts-PROD_NAME
 *     |   |          |__PROD_QUANTITY    LIKE zproducts-PROD_QUANTITY
 *     |   |          |__PROD_PRICE       LIKE zproducts-PROD_PRICE
+*     |   |
+*     |   |__gt_client_ids: hashed table of clients master table ID and
+*     |   |          |      order counter when checking in saving changes.
+*     |   |          |_______CLIENT_ID    TYPE zclients-CLIENT_ID
+*     |   |          |_______ORDER_COUNT  TYPE zclients-ORDER_COUNT
+*     |   |
+*     |   |__gt_prod_ids: hashed table of products master table ID
+*     |   |          |    when checking existence in saving changes.
+*     |   |          |_______PROD_ID    TYPE zclients-CLIENT_ID
 *     |   |
 *     |   |__gt_excel: standard table of alsmex_tabline to store
 *     |                raw data extracted from excel file
@@ -499,6 +516,12 @@ REPORT ZCAFETEST_README.
 *     |   |_____gv_save     TYPE STA_TEXT  Save flag
 *     |   |
 *     |   |_____gv_delete   TYPE STA_TEXT  Delete flag
+*     |   |
+*     |   |_____gv_high_clid  TYPE i       Highest Client ID in DB Table
+*     |   |
+*     |   |_____gv_high_prid  TYPE i       Highest Product ID in DB Table
+*     |   |
+*     |   |_____gv_high_orid  TYPE i       Highest Order ID in DB Table
 *     |
 *     |_Object Instances: X
 
@@ -958,27 +981,27 @@ REPORT ZCAFETEST_README.
 *    |     |_Lines [1229-1246]: Loops through new or changed rows in results table checking
 *    |                          input product data.
 *    |
-*    |_Lines [1252-1386]: save_changes: Save Management View changes into DB Tables.
+*    |_Lines [1252-1388]: save_changes: Save Management View changes into DB Tables.
 *    |     |
-*    |     |_Lines [1253-1254]: Call to previous input validation check subroutine.
+*    |     |_Lines [1255-1256]: Call to previous input validation check subroutine.
 *    |     |
-*    |     |_Lines [1266-1275]: Changes on ZCLIENTS: Old client order_count update.
+*    |     |_Lines [1268-1277]: Changes on ZCLIENTS: Old client order_count update.
 *    |     |
-*    |     |_Lines [1278-1288]: Changes on ZCLIENTS: New client id calculation and insert.
+*    |     |_Lines [1280-1290]: Changes on ZCLIENTS: New client id calculation and insert.
 *    |     |
-*    |     |_Lines [1295-1306]: Changes on ZPRODUCTS: Old product details update.
+*    |     |_Lines [1297-1308]: Changes on ZPRODUCTS: Old product details update.
 *    |     |
-*    |     |_Lines [1308-1322]: Changes on ZPRODUCTS: New product id calculation and insert.
+*    |     |_Lines [1310-1324]: Changes on ZPRODUCTS: New product id calculation and insert.
 *    |     |
-*    |     |_Lines [1326-1336]: Changes on ZCORDERS:  New Closed Order data insert.
+*    |     |_Lines [1328-1338]: Changes on ZCORDERS:  New Closed Order data insert.
 *    |     |
-*    |     |_Lines [1340-1353]: Changes on ZORDPRODUCTS: New Order Product row insert and
+*    |     |_Lines [1342-1355]: Changes on ZORDPRODUCTS: New Order Product row insert and
 *    |     |                                             disable changed and new flags.
 *    |     |
-*    |     |_Lines [1361-1374]: Changes on ZPRODUCTS: Old Order product details update and
+*    |     |_Lines [1363-1376]: Changes on ZPRODUCTS: Old Order product details update and
 *    |                                                disable changed and new flags.
 *    |
-*    |_Lines [1389-1406]: clearing: Clear Global variables and liberate memory space.
+*    |_Lines [1391-1408]: clearing: Clear Global variables and liberate memory space.
 
 *   .....................
 
@@ -988,9 +1011,223 @@ REPORT ZCAFETEST_README.
 
 * -Reading by abstraction help:
 *    |   ----------------------------------------------------
-*    |                [Program Sections]
+*    |           [GET & MAKE (DATA / OUTER) Subroutines]
 *    |
-*    |_Lines [-]:
+*    |_Lines [12-80]: get_data_outer: Retrieves data from DB Tables. Variables-> DATA
+*    |     |                                                       SELECT JOIN-> OUTER
+*    |     |
+*    |     |_Lines [18-31]: Non-dynamic conditions Approach select queries
+*    |     |              for non-master. LEFT OUTER Join of zcorders and zordproducts
+*    |     |
+*    |     |_Lines [35-50]: Non-dynamic conditions Approach select queries
+*    |     |                 for master data.
+*    |     |
+*    |     |_Lines [52-53]: Call to prepare the dynamic conditions strings.
+*    |     |
+*    |     |_Lines [56-62]: Dynamic conditions Approach select queries
+*    |     |              for non-master. LEFT OUTER Join of zcorders and zordproducts
+*    |     |
+*    |     |_Lines [66-77]: Dynamic conditions Approach select queries
+*    |                       for master data.
+*    |   ----------------------------------------------------
+*    |           [GET & MAKE (ZREDU1XX APPROACH) Subroutines]
+*    |
+*    |_Lines [87-139]: "ZREDU1XX Search Method Explanation"
+*    |
+*    |_Lines [143-340]: get_data_type: Retrieves data from DB Tables. Variables-> TYPE
+*    |     |                                                        SELECT JOIN-> INNER/OUTER
+*    |     |
+*    |     |_Lines [150-193]: Local Types and Variable Declaration
+*    |     |     |
+*    |     |     |_Types:   ty_corder , ty_ordproduct, ty_master_client, ty_master_product
+*    |     |     |_T.Types: tt_corders, tt_ordproducts, tt_master_clients, tt_master_products
+*    |     |     |
+*    |     |     |_Internal Tables:
+*    |     |     |       |__lt_corders         TYPE tt_corders  WITH HEADER LINE (Line Row embedded)
+*    |     |     |       |__lt_ordproducts     TYPE tt_ordproducts WITH HEADER LINE (Line Row embedded)
+*    |     |     |       |__lt_master_clients  TYPE tt_master_clients WITH HEADER LINE (Line Row embedded)
+*    |     |     |       |__lt_master_products TYPE tt_master_products WITH HEADER LINE (Line Row embedded)
+*    |     |     |
+*    |     |     |_Arquetypical Variables:
+*    |     |             |__lv_tabix           TYPE sy-tabix    Index for the found match row
+*    |     |             |__lv_where_co        TYPE string      dynamic conditions string for lt_corders
+*    |     |             |__lv_where_op        TYPE string      dynamic conditions string for lt_ordproducts
+*    |     |     
+*    |     |_Lines [197-218]: Non-Dynamic-> Individual SELECT queries for both zcorders and zordproducts
+*    |     |
+*    |     |_Lines [221-250]: Non-Dynamic->While looping through one of the internal tables(INTO HEADER LINE):
+*    |     |     |
+*    |     |     |_Lines [222-223]: take displayable fields (couldnt be done directly over gt_results)
+*    |     |     |_Lines [225-228]: Binary search for a match in the other internal table. If match, keep
+*    |     |     |                  the index, if not and OUTER option is enabled, append the row anyways.
+*    |     |     | 
+*    |     |     |_Lines [241-250]: Loop through the other table from the saved index. Taking displayable
+*    |     |                        fields present in the second table and appending the Row to results.
+*    |     |
+*    |     |_Lines [254-271]: Non-dynamic conditions Approach select queries
+*    |     |                 for master data.         
+*    |     |
+*    |     |_Lines [273-274]: Call to prepare the dynamic conditions strings (different from DATA Approach)
+*    |     |     
+*    |     |_Lines [277-288]: Dynamic-> Individual SELECT queries for both zcorders and zordproducts
+*    |     |
+*    |     |_Lines [291-320]: Dynamic->While looping through one of the internal tables(INTO HEADER LINE):
+*    |     |     |
+*    |     |     |_Lines [292-293]: take displayable fields (couldnt be done directly over gt_results)
+*    |     |     |_Lines [295-298]: Binary search for a match in the other internal table. If match, keep
+*    |     |     |                  the index, if not and OUTER option is enabled, append the row anyways.
+*    |     |     | 
+*    |     |     |_Lines [311-318]: Loop through the other table from the saved index. Taking displayable
+*    |     |                        fields present in the second table and appending the Row to results.
+*    |     |
+*    |     |_Lines [324-337]: Dynamic conditions Approach select queries
+*    |                        for master data.         
+*    |     
+*    |_Lines [345-541]: get_data_line: Retrieves data from DB Tables. Variables-> TYPE + Line Var.
+*    |     |                                                        SELECT JOIN-> INNER/OUTER
+*    |     |
+*    |     |_Lines [348-395]: Local Types and Variable Declaration
+*    |     |     |
+*    |     |     |_Types:   ty_corder , ty_ordproduct, ty_master_client, ty_master_product
+*    |     |     |_T.Types: tt_corders, tt_ordproducts, tt_master_clients, tt_master_products
+*    |     |     |
+*    |     |     |_Internal Tables:
+*    |     |     |       |__lt_corders         TYPE tt_corders  
+*    |     |     |       |__lt_ordproducts     TYPE tt_ordproducts
+*    |     |     |       |__lt_master_clients  TYPE tt_master_clients 
+*    |     |     |       |__lt_master_products TYPE tt_master_products 
+*    |     |     |
+*    |     |     |_Arquetypical Variables:
+*    |     |             |__lv_tabix           TYPE sy-tabix    Index for the found match row
+*    |     |             |__lv_where_co        TYPE string      dynamic conditions string for lt_corders
+*    |     |             |__lv_where_op        TYPE string      dynamic conditions string for lt_ordproducts
+*    |     |             |__ls_corder          TYPE ty_corder          Orders Local Internal Table Line
+*    |     |             |__ls_ordproduct      TYPE ty_ordproduct      Ordproducts Local Internal Table Line
+*    |     |             |__ls_master_client   TYPE ty_master_client   Clients Local Internal Table Line
+*    |     |             |__ls_master_product  TYPE ty_master_product  Products Local Internal Table Line
+*    |     |     
+*    |     |_Lines [402-420]: Non-Dynamic-> Individual SELECT queries for both zcorders and zordproducts
+*    |     |
+*    |     |_Lines [423-452]: Non-Dynamic->While looping through one of the internal tables INTO Line Var. :
+*    |     |     |
+*    |     |     |_Line  [424]:     Take displayable fields to gs_result
+*    |     |     |_Lines [427-430]: Binary search for a match in the other internal table. If match, keep
+*    |     |     |                  the index, if not and OUTER option is enabled, append the row anyways.
+*    |     |     | 
+*    |     |     |_Lines [443-450]: Loop through the other table from the saved index. Taking displayable
+*    |     |                        fields present in the second table and appending the Row to results.
+*    |     |
+*    |     |_Lines [456-473]: Non-dynamic conditions Approach select queries
+*    |     |                 for master data.         
+*    |     |
+*    |     |_Lines [475-476]: Call to prepare the dynamic conditions strings (different from DATA Approach)
+*    |     |     
+*    |     |_Lines [479-490]: Dynamic-> Individual SELECT queries for both zcorders and zordproducts
+*    |     |
+*    |     |_Lines [493-521]: Dynamic->While looping through one of the internal tables INTO Line Var. :
+*    |     |     |
+*    |     |     |_Line  [494]:     Take displayable fields to gs_result
+*    |     |     |_Lines [496-500]: Binary search for a match in the other internal table. If match, keep
+*    |     |     |                  the index, if not and OUTER option is enabled, append the row anyways.
+*    |     |     | 
+*    |     |     |_Lines [513-519]: Loop through the other table from the saved index. Taking displayable
+*    |     |                        fields present in the second table and appending the Row to results.
+*    |     |
+*    |     |_Lines [525-538]: Dynamic conditions Approach select queries
+*    |                        for master data.         
+*    |
+*    |_Lines [545-743]: get_data_fsym: Retrieves data from DB Tables. Variables-> <FIELD-SYMBOLS>.
+*    |     |                                                        SELECT JOIN-> INNER/OUTER
+*    |     |
+*    |     |_Lines [548-599]: Local Types and Variable Declaration
+*    |     |     |
+*    |     |     |_Types:   ty_corder , ty_ordproduct, ty_master_client, ty_master_product
+*    |     |     |_T.Types: tt_corders, tt_ordproducts, tt_master_clients, tt_master_products
+*    |     |     |
+*    |     |     |_Internal Tables:
+*    |     |     |       |__lt_corders         TYPE tt_corders  
+*    |     |     |       |__lt_ordproducts     TYPE tt_ordproducts
+*    |     |     |       |__lt_master_clients  TYPE tt_master_clients 
+*    |     |     |       |__lt_master_products TYPE tt_master_products 
+*    |     |     |
+*    |     |     |_Arquetypical Variables:
+*    |     |     |       |__lv_tabix           TYPE sy-tabix    Index for the found match row
+*    |     |     |       |__lv_where_co        TYPE string      dynamic conditions string for lt_corders
+*    |     |     |       |__lv_where_op        TYPE string      dynamic conditions string for lt_ordproducts
+*    |     |     |       |__ls_corder          TYPE ty_corder          Orders Local Internal Table Line
+*    |     |     |       |__ls_ordproduct      TYPE ty_ordproduct      Ordproducts Local Internal Table Line
+*    |     |     |       |__ls_master_client   TYPE ty_master_client   Clients Local Internal Table Line
+*    |     |     |       |__ls_master_product  TYPE ty_master_product  Products Local Internal Table Line
+*    |     |     |
+*    |     |     |_Field Symbols:
+*    |     |             |__<FS_CORDER>        STRUCTURE ls_corder    FieldSymbol Pointer for Order Table  
+*    |     |             |__lt_ordproducts     TYPE ty_ordproduct   FieldSymbol Pointer for Ordproducts Table
+*    |     |     
+*    |     |_Lines [606-624]: Non-Dynamic-> Individual SELECT queries for both zcorders and zordproducts
+*    |     |
+*    |     |_Lines [627-655]: Non-Dynamic->While looping through one of the internal tables Assigning Pointers
+*    |     |     |
+*    |     |     |_Line  [628]:     Take displayable fields to gs_result from the Pointer 
+*    |     |     |_Lines [630-633]: Binary search for a match in the other internal table. If match, keep
+*    |     |     |                  the index, if not and OUTER option is enabled, append the row anyways.
+*    |     |     | 
+*    |     |     |_Lines [646-653]: Loop through the other table from the saved index. Taking displayable
+*    |     |                        fields present in the second table and appending the Row to results.
+*    |     |
+*    |     |_Lines [659-676]: Non-dynamic conditions Approach select queries
+*    |     |                 for master data.         
+*    |     |
+*    |     |_Lines [678-679]: Call to prepare the dynamic conditions strings (different from DATA Approach)
+*    |     |     
+*    |     |_Lines [682-693]: Dynamic-> Individual SELECT queries for both zcorders and zordproducts
+*    |     |
+*    |     |_Lines [696-723]: Dynamic->While looping through one of the internal table Assigning Pointers:
+*    |     |     |
+*    |     |     |_Line  [697]:     Take displayable fields to gs_result from Pointer
+*    |     |     |_Lines [699-702]: Binary search for a match in the other internal table. If match, keep
+*    |     |     |                  the index, if not and OUTER option is enabled, append the row anyways.
+*    |     |     | 
+*    |     |     |_Lines [715-721]: Loop through the other table from the saved index. Taking displayable
+*    |     |                        fields present in the second table and appending the Row to results.
+*    |     |
+*    |     |_Lines [727-740]: Dynamic conditions Approach select queries
+*    |                        for master data.         
+*    | 
+*    |_Lines [746-869]: dynamic_conditions_indv (where_co, where_op): Calcules WHERE conditions dynamically
+*    | 
+*    |_Lines [873-898]: all_ids: Aditional SELECT queries to store hashed internal tables of every product
+*    |                          and client in DB, even if the user input search filters. Used to check 
+*    |                          for existence and the next available id when saving changes in Management V.
+*    |
+*    |_Lines [903-976]: search_order_list_ext: Subroutine that makes the calls to the
+*          |                            necessary get&make data forms and is called from
+*          |                            outside. Also Calls its homonym in F01.
+*          |
+*          |_Lines [908-928]: VARIABLES = DATA Approach
+*          |     |
+*          |     |_Line  [909-913]: SELECT JOIN = INNER -> Version 1.2.0 search_order_list form
+*          |     |                                         + Extra SELECT queries for Management View
+*          |     |
+*          |     |_Line  [914-928]: SELECT JOIN = OUTER -> get_data_outer Call
+*          |                                               + Extra SELECT queries for Management View
+*          |                                               + Version 1.2.0 Color Scheme and make_data
+*          |
+*          |_Lines [930-943]: VARIABLES = TYPE Approach
+*          |     |
+*          |     |_Line  [931]:     SELECT JOIN = BOTH  -> get_data_type Call
+*          |                                               + Extra SELECT queries for Management View
+*          |                                               + Version 1.2.0 Color Scheme and make_data
+*          |
+*          |_Lines [945-958]: VARIABLES = TYPE + Line var. Approach
+*          |     |
+*          |     |_Line  [931]:     SELECT JOIN = BOTH  -> get_data_line Call
+*          |                                               + Extra SELECT queries for Management View
+*          |                                               + Version 1.2.0 Color Scheme and make_data
+*          |_Lines [960-973]: VARIABLES = <FIELD-SYMBOLS>  Approach
+*                |
+*                |_Line  [931]:     SELECT JOIN = BOTH  -> get_data_fsym Call
+*                                                          + Extra SELECT queries for Management View
+*                                                          + Version 1.2.0 Color Scheme and make_data
 
 
 * __________________PBO and PAI Logic:____________________________
