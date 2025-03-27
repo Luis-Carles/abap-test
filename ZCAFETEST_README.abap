@@ -350,7 +350,7 @@ REPORT ZCAFETEST_README.
 * |__ZMANAGEMENT_CLS        |__ZMAIN_CLS            }    |
 * |__ZMANAGEMENT_SCR        |    |                  }    |
 * |                         |    |__ZMAIN_F01       }    |__ZMAIN_F03
-* |__ZMANAGEMENT_F01             |                       }    |
+* |__ZMANAGEMENT_F01        |                       }    |
 * |__ZMANAGEMENT_F02        |__ZMAIN_F02           _}    |
 * |__ZMANAGEMENT_O01        |                            |__ZMP_CAFETEST_O01
 * |__ZMANAGEMENT_I01        |__ZMAIN_SCR                 |__ZMP_CAFETEST_I01
