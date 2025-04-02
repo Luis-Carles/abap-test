@@ -13,6 +13,9 @@ INCLUDE <CL_ALV_CONTROL>.
 " DB. Tables, global structures, internal tables import
 INCLUDE ZOVERALL_TOP.
 
+" ALV Objects import
+INCLUDE ZOVERALL_ALV.
+
 " Classes for Event Handling
 INCLUDE ZOVERALL_CLS.
 
