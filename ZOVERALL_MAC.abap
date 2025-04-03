@@ -29,3 +29,28 @@ DEFINE %ADD_ITEM.
   APPEND gs_item to gt_item_table.
 
 END-OF-DEFINITION.
+
+DEFINE %CUSTOM_FIELD.
+  gs_det_fieldcat-key        = &1.
+  gs_det_fieldcat-reptext    = gs_det_fieldcat-scrtext_l =
+  gs_det_fieldcat-scrtext_m  = gs_det_fieldcat-scrtext_s =
+  gs_det_fieldcat-coltext    = &2.
+  gs_det_fieldcat-col_pos    = &3.
+  IF gv_mode = 'M' AND &4 = 'X'.
+*    gs_det_fieldcat-edit = 'X'.
+  ENDIF.
+  IF gv_mode = 'M' AND &5 = 'X'.
+*    gs_det_fieldcat-lowercase = 'X'.
+  ENDIF.
+
+END-OF-DEFINITION.
+
+DEFINE %CUSTOM_COLOR.
+  CLEAR gs_det_color.
+  gs_det_color-fname = &1.
+  gs_det_color-color-int = &2.
+  gs_det_color-color-col = &3.
+  gs_det_color-nokeycol  = &4.
+  APPEND gs_det_color TO gt_det_colors.
+
+END-OF-DEFINITION.

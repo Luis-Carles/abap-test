@@ -11,7 +11,7 @@ REPORT ZCAFETEST_README.
 * by Luis Carles Dura
 * at DBDS 2/14/2025'
 * https://github.com/Luis-Carles/abap-test
-* version 1.2.1
+* version 1.2.2
 *
 
 * -----------Abstract:

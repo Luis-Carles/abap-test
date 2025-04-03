@@ -21,6 +21,9 @@ TABLES: zclients,     " Master DB Table that stores
   " GLobal flag to know if every internal table was filled
   DATA: gv_filled TYPE abap_bool VALUE abap_false.
 
+  " Global variable that stores the View Mode
+  DATA: gv_mode TYPE CHAR1 VALUE 'D'.
+
   " Global variables to avoid
   " messing with sy-ucomm
   DATA: gv_code       TYPE sy-ucomm,
@@ -50,29 +53,6 @@ TYPES: BEGIN OF ty_ordproduct,
        END OF ty_ordproduct.
 " List of Products Internal Table Type
 TYPES: tt_ordproducts TYPE TABLE OF ty_ordproduct.
-
-" Detail List for Double Click Table Line Type
-*TYPES: BEGIN OF ty_detail,
-*        ORDER_CLIENT        TYPE CHAR10,
-*        CLIENT_NAME         TYPE CHAR40,
-*        CLIENT_LAST_NAME    TYPE CHAR40,
-*        ORDER_COUNT         TYPE CHAR5,
-*        REG_STATUS          TYPE CHAR20,
-*        ORDER_ID            TYPE CHAR10,
-*        ORDER_DATE          TYPE CHAR10,
-*        ORDER_TIME          TYPE CHAR10,
-*        TOTAL               TYPE CHAR10,
-*        WAERS               TYPE CHAR5,
-*        PAYMENT_METHOD      TYPE CHAR15,
-*        PROD_ID             TYPE CHAR10,
-*        PROD_NAME           TYPE CHAR40,
-*        PROD_PRICE          TYPE CHAR10,
-*        PROD_QUANTITY       TYPE CHAR10,
-*        PROD_STOCK          TYPE CHAR10,
-*        MEINS               TYPE CHAR3,
-*      END OF ty_detail.
-" Detail List for Double Click Table Type
-*TYPES: tt_details TYPE TABLE OF ty_detail.
 
 " Non-master Internal Data Tables
 DATA: gt_corders     TYPE tt_corders,
