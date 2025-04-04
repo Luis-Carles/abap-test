@@ -9,9 +9,9 @@ REPORT ZCAFETEST_README.
 *
 * -----------CAFETERIA TEST PROJECT--------------
 * by Luis Carles Dura
-* at DBDS 2/14/2025'
+* at DBDS 2/14/2025
 * https://github.com/Luis-Carles/abap-test
-* version 1.2.2
+* version 1.3.0
 *
 
 * -----------Abstract:
@@ -322,6 +322,34 @@ REPORT ZCAFETEST_README.
 
 *   .....................
 
+* _____________ZOVERALL_PROGRAM:_________________________________
+* Column Tree based report program for CAFETEST.
+*                                      It includes <CL_ALV_CONTROL>
+*                                                  ZOVERALL_TOP
+*                                                  ZOVERALL_ALV
+*                                                  ZOVERALL_CLS
+*                                                  ZOVERALL_MAC
+*                                                  ZOVERALL_F01
+*                                                  ZOVERALL_O01
+*                                                  ZOVERALL_I01
+* VIEW MODE:        D: Display
+*                   *M: Management
+
+* Screen 100 ------> Display View
+* Screen 900 ------> Details Display (ALV GRID)
+
+* -Reading by abstraction help:
+*    |_Lines [10-32]: Imports
+*    |_Lines [43-44]: START OF SELECTION (Main program data retrieval)
+*    |           |__Calls get_data Subroutine that makes 4 individual
+*    |              Select queries to the DB Tables (Master and non-M)
+*    |
+*    |_Lines [46-51]: END-OF-SELECTION (Main program execution)
+*          |_Lines [47-48]: Column Tree Display View. (Screen 100)
+*          |_Lines [49-51]: Data retrieval Unsuccessfull.
+
+*   .....................
+
 * _____________ZVALIDATE_QUANTITIES:______________________________
 * Legacy and alpha version of CAFETEST.
 * It includes code snippets of versions 0.0.0 to 0.0.9 without any
@@ -343,17 +371,29 @@ REPORT ZCAFETEST_README.
 
 * -----------Includes and Modularization:
 
-* ZMANAGEMENT_PROGRAM       ZMAIN_PROGRAM                ZMP_CAFETEST
-* |                         |                      _     |
-* |__ZMANAGEMENT_TOP        |__ZMAIN_TOP            }    |__ZMP_CAFETEST_TOP
-* |__ZMANAGEMENT_ALV        |                       }____|_______|
-* |__ZMANAGEMENT_CLS        |__ZMAIN_CLS            }    |
-* |__ZMANAGEMENT_SCR        |    |                  }    |
-* |                         |    |__ZMAIN_F01       }    |__ZMAIN_F03
-* |__ZMANAGEMENT_F01        |                       }    |
-* |__ZMANAGEMENT_F02        |__ZMAIN_F02           _}    |
-* |__ZMANAGEMENT_O01        |                            |__ZMP_CAFETEST_O01
-* |__ZMANAGEMENT_I01        |__ZMAIN_SCR                 |__ZMP_CAFETEST_I01
+* ZMANAGEMENT_PROGRAM       ZMAIN_PROGRAM             ZMP_CAFETEST
+* |                         |                   _     |
+* |__ZMANAGEMENT_TOP        |__ZMAIN_TOP         }    |__ZMP_CAFETEST_TOP
+* |__ZMANAGEMENT_ALV        |                    }____|_______|
+* |__ZMANAGEMENT_CLS        |__ZMAIN_CLS         }    |
+* |__ZMANAGEMENT_SCR        |    |               }    |
+* |                         |    |__ZMAIN_F01    }    |__ZMAIN_F03
+* |__ZMANAGEMENT_F01        |                    }    |
+* |__ZMANAGEMENT_F02        |__ZMAIN_F02        _}    |
+* |__ZMANAGEMENT_O01        |                         |__ZMP_CAFETEST_O01
+* |__ZMANAGEMENT_I01        |__ZMAIN_SCR              |__ZMP_CAFETEST_I01
+
+
+* ZOVERALL_PROGRAM
+* |
+* |__ZOVERALL_TOP
+* |__ZOVERALL_ALV
+* |__ZOVERALL_CLS
+* |__ZOVERALL_MAC
+* |
+* |__ZOVERALL_F01
+* |__ZOVERALL_O01
+* |__ZOVERALL_I01
 
 
 * ________Global Variables and Type Declarations:________________
@@ -473,7 +513,7 @@ REPORT ZCAFETEST_README.
 *     |   |          |__CLIENT_LAST_NAME LIKE zclients-CLIENT_LAST_NAME
 *     |   |          |__ORDER_COUNT      LIKE zclients-ORDER_COUNT
 *     |   |
-*     |   |__gt_master_clients: sorted table of products master table
+*     |   |__gt_master_products: sorted table of products master table
 *     |   |          |          data information (Filtered by conditions)
 *     |   |          |__PROD_ID          LIKE zproducts-PROD_ID
 *     |   |          |__PROD_NAME        LIKE zproducts-PROD_NAME
@@ -553,6 +593,120 @@ REPORT ZCAFETEST_README.
 *         |
 *         |_____go_grid       TYPE REF TO cl_gui_alv_grid
 
+*   .....................
+
+* -ZOVERALL_TOP:
+*     |
+*     |_Includes: X
+*     |
+*     |_DB. Tables: zproducts, zclients, zcorders, zordproducts
+*     |
+*     |_Types:
+*     |   |_____ty_corder
+*     |   |          |___ORDER_ID        LIKE zcorders-ORDER_ID,
+*     |   |          |___PAYMENT_METHOD  LIKE zcorders-PAYMENT_METHOD
+*     |   |          |___TOTAL           LIKE zcorders-TOTAL
+*     |   |          |___WAERS           LIKE zcorders-WAERS
+*     |   |          |___ORDER_DATE      LIKE zcorders-ORDER_DATE
+*     |   |          |___ORDER_TIME      LIKE zcorders-ORDER_TIME
+*     |   |          |___ORDER_CLIENT    LIKE zcorders-ORDER_CLIENT
+*     |   |
+*     |   |_____tt_corders               TYPE TABLE OF ty_corders
+*     |   |
+*     |   |_____ty_ordproduct
+*     |   |          |___ORDER_ID        LIKE zordproducts-ORDER_ID
+*     |   |          |___PROD_ID         LIKE zordproducts-PROD_ID
+*     |   |          |___PROD_QUANTITY   LIKE zordproducts-PROD_QUANTITY
+*     |   |          |___MEINS           LIKE zordproducts-MEINS
+*     |   |
+*     |   |_____tt_ordproducts           TYPE TABLE OF ty_ordproduct
+*     |
+*     |_Internal tables:
+*     |   |__gt_results: standard table of ZST_RESULT to store
+*     |   |              every fetched row to display details
+*     |   |
+*     |   |__gt_master_clients: sorted table of clients master table
+*     |   |          |          data information
+*     |   |          |__CLIENT_ID        LIKE zclients-CLIENT_ID
+*     |   |          |__CLIENT_NAME      LIKE zclients-CLIENT_NAME
+*     |   |          |__CLIENT_LAST_NAME LIKE zclients-CLIENT_LAST_NAME
+*     |   |          |__ORDER_COUNT      LIKE zclients-ORDER_COUNT
+*     |   |
+*     |   |__gt_master_products: sorted table of products master table
+*     |   |          |          data information
+*     |   |          |__PROD_ID          LIKE zproducts-PROD_ID
+*     |   |          |__PROD_NAME        LIKE zproducts-PROD_NAME
+*     |   |          |__PROD_QUANTITY    LIKE zproducts-PROD_QUANTITY
+*     |   |          |__PROD_PRICE       LIKE zproducts-PROD_PRICE
+*     |   |
+*     |   |__gt_corders: standard table of ty_orders, orders non-master
+*     |   |              data information
+*     |   |
+*     |   |__gt_ordproducts: standard table of ty_ordproduct, list of
+*     |   |                  products non-master data information
+*     |   |
+*     |   |__gt_node_table: standard table of treev_node to store
+*     |   |                 nodes of the column tree
+*     |   |
+*     |   |__gt_item_table: standard table of mtreeitm to store
+*     |                     items of the column tree
+*     |
+*     |_Arquetypical variables:
+*     |   |_____gv_mode     TYPE CHAR1       ALV GRID View Mode
+*     |   |
+*     |   |_____gv_filled   TYPE abap_bool   Data Retrieval Success Flag
+*     |   |
+*     |   |_____gv_code     TYPE sy-ucomm    stores sy-ucomm (standard)
+*     |   |
+*     |   |_____ok_code     TYPE sy-ucomm    checks sy-ucomm (standard)
+*     |   |
+*     |   |_____gs_corder   TYPE ty_corder   order table Line
+*     |   |
+*     |   |__gs_ordproduct  TYPE ty_corder   List of Products table Line
+*     |   |
+*     |   |_____gs_result   TYPE ZST_RESULT  Results table Line
+*     |   |
+*     |   |_____gs_node     TYPE treev_node  Node table Line
+*     |   |
+*     |   |_____gs_item     TYPE mtreeitm    Item table Line
+*     |   |
+*     |   |__hierarchy_header  TYPE treev_hhdr  Hierarchy Information column
+*     |
+*     |_Object Instances:
+*         |____go_application TYPE REF TO lcl_application
+*         |
+*         |_____go_ccontainer TYPE REF TO cl_gui_custom_container
+*         |
+*         |_____go_tree       TYPE REF TO cl_gui_column_tree
+
+*   .....................
+
+* -ZOVERALL_ALV:
+*     |
+*     |_Includes: X
+*     |
+*     |_DB. Tables: X
+*     |
+*     |_Types: X
+*     |
+*     |_Internal tables: X
+*     |
+*     |_Arquetypical variables:
+*     |   |_____gt_det_fcat_slis  TYPE slis_t_fieldcat_alv  slis Field Catalog
+*     |   |
+*     |   |_____gt_det_fieldcat   TYPE lvc_t_fcat    LVC Field Catalog
+*     |   |_____gs_det_fieldcat   TYPE lvc_s_fcat    LVC Field Catalog Line
+*     |   |_____gs_det_scroll     TYPE lvc_t_stbl    LVC Stable refresh variable
+*     |   |_____gs_det_layout     TYPE lvc_s_layo    LVC Layout
+*     |   |_____gt_det_toolbar_ex  TYPE ui_functions  Toolbar Exempted Functions
+*     |   |_____gt_det_colors     TYPE lvc_t_scol    LVC Table of Colors
+*     |   |_____gs_det_color      TYPE lvc_s_scol    LVC Colors Line
+*     |
+*     |_Object Instances:
+*         |_____go_det_ccontainer TYPE REF TO cl_gui_custom_container
+*         |
+*         |_____go_det_grid       TYPE REF TO cl_gui_alv_grid
+
 
 * ___________Classes and Event Handling CLS:_____________________
 
@@ -561,6 +715,8 @@ REPORT ZCAFETEST_README.
 * for storing/updating data from internal and database tables.
 *     |
 *     |_Includes: ZMAIN_F01
+*     |
+*     |_Instances: X
 *     |
 *     |_Classes:
 *          |
@@ -638,6 +794,78 @@ REPORT ZCAFETEST_README.
 *   +-----------------------------+
 *   | + when_data_changed         | (Changed data Dormain Demon)
 *   +-----------------------------+
+
+*   .....................
+
+* -ZOVERALL_CLS: OOP classes for ZOVERALL Details Double click events
+*     |
+*     |_Includes: X
+*     |
+*     |_Instances: X
+*     |
+*     |_Classes:
+*          |
+*         _|_
+*  UML Class Diagram with expanded method/attribute explanations:
+
+*   +-----------------------------+
+*   |   lcl_application           |
+*   +-----------------------------+
+*   | + when_node_double_click    | (Node Double click event Demon)
+*   | + when_item_double_click    | (Item Double click event Demon)
+*   | + *when_expand_no_children  | (Expand no children event Demon)
+*   | + *when_button_click        | (Button click event Demon)
+*   +-----------------------------+
+
+
+* __________________Macros / Definitions MAC:____________________
+
+* -ZOVERALL_MAC: Contains every Macro related with repetitive and
+* simple operations for ZOVERALL Column Tree and Details Display.
+* Majority of them are set of a few sentences that ultimately add
+* something to a table (Nodes, Items, Colors, Results..). The only
+* thing that varies between them is just the particular parameters
+* of each prior to appending.
+
+* -Reading by abstraction help:
+*    |   ----------------------------------------------------
+*    |                [Tree Related Macros]
+*    |
+*    |_Lines [5-12]: %ADD_COLUMN: add a column to the Tree.
+*    |                |
+*    |                |_&1: Name of the column.
+*    |                |_&2: Header text of the column.
+*    |                |_&3: Width of the column.
+*    |
+*    |_Lines [14-23]: %ADD_NODE: add a node to the Node table.
+*    |                |
+*    |                |_&1: Node Key, unique node identifier.
+*    |                |_&2: Parent Key, (If Root node: space).
+*    |                |_&3: IS FOLDER?
+*    |                |_&4: EXPANDER, expanded when first display.
+*    |
+*    |_Lines [25-31]: %ADD_ITEM: add an item to the Item table.
+*    |                |
+*    |                |_&1: Node Key, key of the assinged node.
+*    |                |_&2: Item Name, Column associated for this item.
+*    |                |_&3: TEXT, field Value of the item.
+*    |   ----------------------------------------------------
+*    |             [Field Catalog Related Macros]
+*    |
+*    |_Lines [33-44]: %CUSTOM_FIELD: custom a field of results Table.
+*    |                |
+*    |                |_&1: Key Field? Signals if the field is key.
+*    |                |_&2: Field name / Label
+*    |                |_&3: Column Position of the field.
+*    |                |_&4: EDIT? Signals if the field is editable.
+*    |                |_&5: Lowercase? Signals if lowercase are allowed.
+*    |
+*    |_Lines [48-56]: %CUSTOM_COLOR: custom a field of results Table.
+*                     |
+*                     |_&1: FieldName, associated field for this color.
+*                     |_&2: Intense, color intense aesthetic option.
+*                     |_&3: Color, color code for this field.
+*                     |_&4: NO KEY? Signals if the field is a key.
 
 
 * __________________Soubroutines FXX:____________________________
@@ -1052,7 +1280,7 @@ REPORT ZCAFETEST_README.
 *    |     |             |__lv_tabix           TYPE sy-tabix    Index for the found match row
 *    |     |             |__lv_where_co        TYPE string      dynamic conditions string for lt_corders
 *    |     |             |__lv_where_op        TYPE string      dynamic conditions string for lt_ordproducts
-*    |     |     
+*    |     |
 *    |     |_Lines [197-218]: Non-Dynamic-> Individual SELECT queries for both zcorders and zordproducts
 *    |     |
 *    |     |_Lines [221-250]: Non-Dynamic->While looping through one of the internal tables(INTO HEADER LINE):
@@ -1060,15 +1288,15 @@ REPORT ZCAFETEST_README.
 *    |     |     |_Lines [222-223]: take displayable fields (couldnt be done directly over gt_results)
 *    |     |     |_Lines [225-228]: Binary search for a match in the other internal table. If match, keep
 *    |     |     |                  the index, if not and OUTER option is enabled, append the row anyways.
-*    |     |     | 
+*    |     |     |
 *    |     |     |_Lines [241-250]: Loop through the other table from the saved index. Taking displayable
 *    |     |                        fields present in the second table and appending the Row to results.
 *    |     |
 *    |     |_Lines [254-271]: Non-dynamic conditions Approach select queries
-*    |     |                 for master data.         
+*    |     |                 for master data.
 *    |     |
 *    |     |_Lines [273-274]: Call to prepare the dynamic conditions strings (different from DATA Approach)
-*    |     |     
+*    |     |
 *    |     |_Lines [277-288]: Dynamic-> Individual SELECT queries for both zcorders and zordproducts
 *    |     |
 *    |     |_Lines [291-320]: Dynamic->While looping through one of the internal tables(INTO HEADER LINE):
@@ -1076,13 +1304,13 @@ REPORT ZCAFETEST_README.
 *    |     |     |_Lines [292-293]: take displayable fields (couldnt be done directly over gt_results)
 *    |     |     |_Lines [295-298]: Binary search for a match in the other internal table. If match, keep
 *    |     |     |                  the index, if not and OUTER option is enabled, append the row anyways.
-*    |     |     | 
+*    |     |     |
 *    |     |     |_Lines [311-318]: Loop through the other table from the saved index. Taking displayable
 *    |     |                        fields present in the second table and appending the Row to results.
 *    |     |
 *    |     |_Lines [324-337]: Dynamic conditions Approach select queries
-*    |                        for master data.         
-*    |     
+*    |                        for master data.
+*    |
 *    |_Lines [345-541]: get_data_line: Retrieves data from DB Tables. Variables-> TYPE + Line Var.
 *    |     |                                                        SELECT JOIN-> INNER/OUTER
 *    |     |
@@ -1092,10 +1320,10 @@ REPORT ZCAFETEST_README.
 *    |     |     |_T.Types: tt_corders, tt_ordproducts, tt_master_clients, tt_master_products
 *    |     |     |
 *    |     |     |_Internal Tables:
-*    |     |     |       |__lt_corders         TYPE tt_corders  
+*    |     |     |       |__lt_corders         TYPE tt_corders
 *    |     |     |       |__lt_ordproducts     TYPE tt_ordproducts
-*    |     |     |       |__lt_master_clients  TYPE tt_master_clients 
-*    |     |     |       |__lt_master_products TYPE tt_master_products 
+*    |     |     |       |__lt_master_clients  TYPE tt_master_clients
+*    |     |     |       |__lt_master_products TYPE tt_master_products
 *    |     |     |
 *    |     |     |_Arquetypical Variables:
 *    |     |             |__lv_tabix           TYPE sy-tabix    Index for the found match row
@@ -1105,7 +1333,7 @@ REPORT ZCAFETEST_README.
 *    |     |             |__ls_ordproduct      TYPE ty_ordproduct      Ordproducts Local Internal Table Line
 *    |     |             |__ls_master_client   TYPE ty_master_client   Clients Local Internal Table Line
 *    |     |             |__ls_master_product  TYPE ty_master_product  Products Local Internal Table Line
-*    |     |     
+*    |     |
 *    |     |_Lines [402-420]: Non-Dynamic-> Individual SELECT queries for both zcorders and zordproducts
 *    |     |
 *    |     |_Lines [423-452]: Non-Dynamic->While looping through one of the internal tables INTO Line Var. :
@@ -1113,15 +1341,15 @@ REPORT ZCAFETEST_README.
 *    |     |     |_Line  [424]:     Take displayable fields to gs_result
 *    |     |     |_Lines [427-430]: Binary search for a match in the other internal table. If match, keep
 *    |     |     |                  the index, if not and OUTER option is enabled, append the row anyways.
-*    |     |     | 
+*    |     |     |
 *    |     |     |_Lines [443-450]: Loop through the other table from the saved index. Taking displayable
 *    |     |                        fields present in the second table and appending the Row to results.
 *    |     |
 *    |     |_Lines [456-473]: Non-dynamic conditions Approach select queries
-*    |     |                 for master data.         
+*    |     |                 for master data.
 *    |     |
 *    |     |_Lines [475-476]: Call to prepare the dynamic conditions strings (different from DATA Approach)
-*    |     |     
+*    |     |
 *    |     |_Lines [479-490]: Dynamic-> Individual SELECT queries for both zcorders and zordproducts
 *    |     |
 *    |     |_Lines [493-521]: Dynamic->While looping through one of the internal tables INTO Line Var. :
@@ -1129,26 +1357,25 @@ REPORT ZCAFETEST_README.
 *    |     |     |_Line  [494]:     Take displayable fields to gs_result
 *    |     |     |_Lines [496-500]: Binary search for a match in the other internal table. If match, keep
 *    |     |     |                  the index, if not and OUTER option is enabled, append the row anyways.
-*    |     |     | 
+*    |     |     |
 *    |     |     |_Lines [513-519]: Loop through the other table from the saved index. Taking displayable
 *    |     |                        fields present in the second table and appending the Row to results.
 *    |     |
 *    |     |_Lines [525-538]: Dynamic conditions Approach select queries
-*    |                        for master data.         
+*    |                        for master data.
 *    |
 *    |_Lines [545-743]: get_data_fsym: Retrieves data from DB Tables. Variables-> <FIELD-SYMBOLS>.
 *    |     |                                                        SELECT JOIN-> INNER/OUTER
 *    |     |
 *    |     |_Lines [548-599]: Local Types and Variable Declaration
-*    |     |     |
 *    |     |     |_Types:   ty_corder , ty_ordproduct, ty_master_client, ty_master_product
 *    |     |     |_T.Types: tt_corders, tt_ordproducts, tt_master_clients, tt_master_products
 *    |     |     |
 *    |     |     |_Internal Tables:
-*    |     |     |       |__lt_corders         TYPE tt_corders  
+*    |     |     |       |__lt_corders         TYPE tt_corders
 *    |     |     |       |__lt_ordproducts     TYPE tt_ordproducts
-*    |     |     |       |__lt_master_clients  TYPE tt_master_clients 
-*    |     |     |       |__lt_master_products TYPE tt_master_products 
+*    |     |     |       |__lt_master_clients  TYPE tt_master_clients
+*    |     |     |       |__lt_master_products TYPE tt_master_products
 *    |     |     |
 *    |     |     |_Arquetypical Variables:
 *    |     |     |       |__lv_tabix           TYPE sy-tabix    Index for the found match row
@@ -1160,25 +1387,25 @@ REPORT ZCAFETEST_README.
 *    |     |     |       |__ls_master_product  TYPE ty_master_product  Products Local Internal Table Line
 *    |     |     |
 *    |     |     |_Field Symbols:
-*    |     |             |__<FS_CORDER>        STRUCTURE ls_corder    FieldSymbol Pointer for Order Table  
+*    |     |             |__<FS_CORDER>        STRUCTURE ls_corder    FieldSymbol Pointer for Order Table
 *    |     |             |__lt_ordproducts     TYPE ty_ordproduct   FieldSymbol Pointer for Ordproducts Table
-*    |     |     
+*    |     |
 *    |     |_Lines [606-624]: Non-Dynamic-> Individual SELECT queries for both zcorders and zordproducts
 *    |     |
 *    |     |_Lines [627-655]: Non-Dynamic->While looping through one of the internal tables Assigning Pointers
 *    |     |     |
-*    |     |     |_Line  [628]:     Take displayable fields to gs_result from the Pointer 
+*    |     |     |_Line  [628]:     Take displayable fields to gs_result from the Pointer
 *    |     |     |_Lines [630-633]: Binary search for a match in the other internal table. If match, keep
 *    |     |     |                  the index, if not and OUTER option is enabled, append the row anyways.
-*    |     |     | 
+*    |     |     |
 *    |     |     |_Lines [646-653]: Loop through the other table from the saved index. Taking displayable
 *    |     |                        fields present in the second table and appending the Row to results.
 *    |     |
 *    |     |_Lines [659-676]: Non-dynamic conditions Approach select queries
-*    |     |                 for master data.         
+*    |     |                 for master data.
 *    |     |
 *    |     |_Lines [678-679]: Call to prepare the dynamic conditions strings (different from DATA Approach)
-*    |     |     
+*    |     |
 *    |     |_Lines [682-693]: Dynamic-> Individual SELECT queries for both zcorders and zordproducts
 *    |     |
 *    |     |_Lines [696-723]: Dynamic->While looping through one of the internal table Assigning Pointers:
@@ -1186,17 +1413,17 @@ REPORT ZCAFETEST_README.
 *    |     |     |_Line  [697]:     Take displayable fields to gs_result from Pointer
 *    |     |     |_Lines [699-702]: Binary search for a match in the other internal table. If match, keep
 *    |     |     |                  the index, if not and OUTER option is enabled, append the row anyways.
-*    |     |     | 
+*    |     |     |
 *    |     |     |_Lines [715-721]: Loop through the other table from the saved index. Taking displayable
 *    |     |                        fields present in the second table and appending the Row to results.
 *    |     |
 *    |     |_Lines [727-740]: Dynamic conditions Approach select queries
-*    |                        for master data.         
-*    | 
+*    |                        for master data.
+*    |
 *    |_Lines [746-869]: dynamic_conditions_indv (where_co, where_op): Calcules WHERE conditions dynamically
-*    | 
+*    |
 *    |_Lines [873-898]: all_ids: Aditional SELECT queries to store hashed internal tables of every product
-*    |                          and client in DB, even if the user input search filters. Used to check 
+*    |                          and client in DB, even if the user input search filters. Used to check
 *    |                          for existence and the next available id when saving changes in Management V.
 *    |
 *    |_Lines [903-976]: search_order_list_ext: Subroutine that makes the calls to the
@@ -1228,6 +1455,184 @@ REPORT ZCAFETEST_README.
 *                |_Line  [931]:     SELECT JOIN = BOTH  -> get_data_fsym Call
 *                                                          + Extra SELECT queries for Management View
 *                                                          + Version 1.2.0 Color Scheme and make_data
+
+*   .....................
+
+* -ZOVERALL_F01: Contains every necessary subroutine for getting
+* and making the data from DB Tables. Every action related to Display,
+* refresh, clearing for SAP Column Tree / Details ALV GRID is also
+* stored here.
+
+* -Reading by abstraction help:
+*    |   ----------------------------------------------------
+*    |           [GET Data Subroutines]
+*    |
+*    |_Lines [9-50]: get_data: Retrieves data from DB Tables.
+*    |     |
+*    |     |_Lines [12-16]: Select query without search conditions for
+*    |     |              non-master data of zcorders. Sort afterwards.
+*    |     |
+*    |     |_Lines [19-22]: Select query without search conditions for
+*    |     |              non-master data of zordproducts. Sort afterwards.
+*    |     |
+*    |     |_Lines [26-30]: Select query without search conditions for
+*    |     |              master data of zclients. Sort afterwards.
+*    |     |
+*    |     |_Lines [33-36]: Select query without search conditions for
+*    |     |              master data of zproducts. Sort afterwards.
+*    |     |
+*    |     |_Lines [39-48]: Check if any Internal table is empty, then
+*    |                    changes global variable gv_filled flag.
+*    |   ----------------------------------------------------
+*    |           [SAP Column Tree Subroutines]
+*    |
+*    |_Lines [58-77]:  create_tree: creates the Column Tree.
+*    |
+*    |_Lines [81-113]: define_columns: Add every column to the Tree,
+*    |                 one for each field in results Row.
+*    |
+*    |_Lines [117-166]: add_items (iv_node_key, is_client, is_product):
+*    |     |            Adds 17 items to Item Table receiving the assigned node
+*    |     |            and the master client / product information.
+*    |     |
+*    |     |_Lines [118-154]: Local Types and Variable Declaration
+*    |     |     |_Types: X
+*    |     |     |_T.Types: X
+*    |     |     |
+*    |     |     |_Internal Tables:
+*    |     |     |       |__lt_item_names   TYPE TABLE OF string  item name table for each Column
+*    |     |     |       |__lt_item_texts   TYPE TABLE OF string  text table for each Column
+*    |     |     |
+*    |     |     |_Arquetypical Variables:
+*    |     |             |__lv_name_aux     TYPE string   auxiliar that will be parameter for Macro
+*    |     |             |__lv_text_aux     TYPE string   auxiliar that will be parameter for Macro
+*    |     |             |__lv_x            TYPE string   Item counter, one Item per Column in Tree
+*    |     |
+*    |     |_Lines [156-165]: 17 Calls to %ADD_ITEM Macro, to add an Item to Item_table.
+*    |
+*    |_Lines [170-279]: build_node_and_item_tables: Builds the Column Tree Node/Item tables.
+*    |     |
+*    |     |_Lines [171-177]: Local Types and Variable Declaration.
+*    |     |     |_Types: X
+*    |     |     |_T.Types: X
+*    |     |     |
+*    |     |     |_Internal Tables: X
+*    |     |     |_Arquetypical Variables:
+*    |     |             |__lv_key          TYPE string     Root node_key when calling %ADD_NODE
+*    |     |             |__lv_order_key    TYPE string     Child node_key when calling %ADD_NODE
+*    |     |             |__lv_prod_key     TYPE string     GrandChild node_key when calling %ADD_NODE
+*    |     |             |__lv_o_tabix      TYPE sy-tabix   Index when looping through gt_corders
+*    |     |             |__lv_p_tabix      TYPE sy-tabix   Index when looping through gt_ordproducts
+*    |     |
+*    |     |_Lines [182-194]: Loops through gt_clients adding a Root Node / Hierarchy Header Item.
+*    |     |
+*    |     |_Lines [200-225]: Loops through gt_corders adding that client corresponding order
+*    |     |                  Child Node / Hierarchy Header Item.
+*    |     |
+*    |     |_Lines [231-257]: Loops through gt_ordproducts adding that order corresponding list of
+*    |     |                  products GrandChild Node.
+*    |     |
+*    |     |_Lines [263-277]: Calls %ADD_ITEM adding that product of the list corresponding 16
+*    |                        Column Fields and Hierarchy Header Items. Actualizes indexes.
+*    |
+*    |_Lines [282-296]: fill_tree: Subroutine that is called internally and calls define_columns,
+*    |                             build_node_and_item_tables to finally build the table with
+*    |                             defined columns and both Node/Item Tables.
+*    |
+*    |_Lines [299-305]: display_tree: Method that expand the hierarchical view and every Node.
+*    |
+*    |_Lines [308-341]: set_tree_events: Method necessary to handle events in Column Tree.
+*    |     |
+*    |     |_Lines [309-310]: Local Types and Variable Declaration
+*    |     |     |_Types: X
+*    |     |     |_T.Types: X
+*    |     |     |
+*    |     |     |_Internal Tables:
+*    |     |     |        |__lt_event    TYPE CNTL_SIMPLE_EVENTS  Event Table
+*    |     |     |
+*    |     |     |_Arquetypical Variables:
+*    |     |             |__lv_event     TYPE CNTL_SIMPLE_EVENT   Event Table Line
+*    |     |
+*    |     |_Lines [312-314]: Adds node_double_click event to events table.
+*    |     |
+*    |     |_Lines [316-318]: Adds item_double_click event to events table.
+*    |     |
+*    |     |_Lines [328-334]: Call to external function to Register every event in the Tree.
+*    |     |
+*    |     |_Lines [336-338]: Set the dormant Demons to listen in go_application.
+*    |
+*    |_Lines [344-354]: refresh_tree: Re-retrieves data from DB tables and rebuild the Tree.
+*    |
+*    |_Lines [358-368]: write_tree: Builds the Tree, calling in order every necessary form:
+*    |                              create_tree->fill_tree->display_tree->set_tree_events.
+*    |
+*    |_Lines [372-393]: clearing: Clears every Display Tree variable and liberate memory space.
+*    |   ----------------------------------------------------
+*    |           [Event Handling Subroutines]
+*    |
+*    |_Lines [400-457]: fill_result: Given an item, it fills th correct field in results row.
+*    |
+*    |_Lines [461-643]: when_double_click: receiving a double_click event type (Node / Item),
+*    |     |            handles actions related to them. Building results table and opening.
+*    |     |            Details View Screen 900 if gt_results is not empty.
+*    |     |
+*    |     |_Lines [462-467]: Local Types and Variable Declaration
+*    |     |     |_Types: X
+*    |     |     |_T.Types: X
+*    |     |     |
+*    |     |     |_Internal Tables: X
+*    |     |     |_Arquetypical Variables:
+*    |     |             |__lv_event     TYPE CNTL_SIMPLE_EVENT   Event Table Line
+*    |     |
+*    |     |_Lines [469-477]: Call to external methods to get the selected Node_key
+*    |     |                  depending on passed double_click event type parameter.
+*    |     |
+*    |     |_Lines [480-485]: Reads node_table trying to find selected Node_key,
+*    |     |                  spliting it to keep parent and Child Node information.
+*    |     |
+*    |     |_Lines [489-514]: SELECTED NODE IS a PRODUCT:
+*    |     |     |
+*    |     |     |_Lines []:
+*    |     |
+*    |     |_Lines [516-562]: SELECTED NODE IS an ORDER:
+*    |     |     |
+*    |     |     |_Lines []:
+*    |     |
+*    |     |_Lines [564-629]: SELECTED NODE IS a CLIENT:
+*    |           |
+*    |           |_Lines []:
+*    |   ----------------------------------------------------
+*    |           [Details Display ALV GRID Subroutines]
+*    |
+*    |_Lines [667-672]: create_det_ccontainer: Creates the custom container for details
+*    |                  results table.
+*    |
+*    |_Lines [675-679]: create_det_grid: Creates the ALV GRID for details results table.
+*    |
+*    |_Lines [682-693]: create_det_layout: Creates and customizes the ALV Layout.
+*    |
+*    |_Lines [696-750]: custom_colors: Customizes the color scheme in the colors table,
+*    |                                  making calls to %CUSTOM_COLOR MACRO.
+*    |
+*    |_Lines [753-818]: custom_det_fieldcat: Loops through created field catalog,
+*    |                                  making calls to %CUSTOM_FIELD MACRO.
+*    |
+*    |_Lines [821-854]: create_det_fieldcat: SLIS Fieldcatalog creation and subsequent
+*    |                                       conversion to LVC FieldCatalog.
+*    |
+*    |_Lines [857-868]: custom_det_toolbar: Exclude non-used functions from ALV GRID toolbar.
+*    |
+*    |_Lines [871-883]: display_det_grid: Call for external method that display data in the grid
+*    |                                    for the first time.
+*    |
+*    |_Lines [886-897]: refresh_details: Call for external method to refresh the ALV GRID.
+*    |
+*    |_Lines [901-913]: write_details: Subroutine that is called from outise and make in order
+*    |                                 the necessary calls to create every ALV object and display
+*    |                                 details in Screen 900. (Refreshes if the grid is created).
+*    |
+*    |_Lines [917-930]: clearing_details: Clear every ALV object and variable if they wont be
+*                                         used anymore, liberate memory space.
 
 
 * __________________PBO and PAI Logic:____________________________
@@ -1371,13 +1776,13 @@ REPORT ZCAFETEST_README.
 
 *   .....................
 
-* -ZMANAGEMENT_I01: Contains every module for ZMANAGEMET that is
+* -ZMANAGEMENT_I01: Contains every module for ZMANAGEMENT that is
 * launched automatically after any button press from the user, those
 * are, the modules for handling each button option.
 
 * -Reading by abstraction help:
 *    |   ----------------------------------------------------
-*    |                [Initial Screen]         Action:
+*    |                [Display View Screen]         Action:
 *    |
 *    |_Lines [8-21]: user_command_100:
 *    |                   |_____ZREFRESH      ->Refreshes the Grid
@@ -1386,6 +1791,8 @@ REPORT ZCAFETEST_README.
 *    |                   |_____BACK,CANCEL   Return to Selection-Screen
 *    |                   |                   + Clear global var.
 *    |                   |_____EXIT          Exit Program
+*    |   ----------------------------------------------------
+*    |              [Management View Screen]       Action:
 *    |
 *    |_Lines [60-84]: user_command_200:
 *    |                   |_____ZREFRESH      ->Refreshes the Grid
@@ -1398,6 +1805,56 @@ REPORT ZCAFETEST_README.
 *    |
 *    |_Lines [86-116]: exit_command_200:
 *                        |_____BACK,CANCEL   Return to Selection-Screen
+*                        |                   + Clear global var.
+*                        |_____EXIT          Exit Program
+
+*   .....................
+
+* -ZOVERALL_O01: Contains every module for ZOVERALL that is
+* lauched automatically everytime a screen is loaded. All of them
+* either windows setup or Column Tree/ALV Write methods.
+
+* -Reading by abstraction help:
+*    |   ----------------------------------------------------
+*    |                [Status modules]
+*    |
+*    |_Lines [8-11]: status_100: Screen 100 status setup modules. They link
+*    |               it with its specific GUI status and GUI Title.
+*    |
+*    |_Lines [20-23]: status_900: Screen 900 status setup modules. They link
+*    |               it with its specific GUI status and GUI Title.
+*    |   ----------------------------------------------------
+*    |                [Write modules]
+*    |
+*    |_Lines [10-12]: write_tree: Screen 100 Display Tree initial call to
+*    |               ColumnTree write subroutine in ZOVERALL_F01.
+*    |
+*    |_Lines [25-27]: write_details: Screen 900 display grid initial call to
+*                    ALV GRID write subroutine in ZOVERALL_F01.
+
+*   .....................
+
+* -ZOVERALL_I01: Contains every module for ZOVERALL that is
+* launched automatically after any button press from the user, those
+* are, the modules for handling each button option.
+
+* -Reading by abstraction help:
+*    |   ----------------------------------------------------
+*    |                [Tree Display Screen]      Action:
+*    |
+*    |_Lines [8-21]: user_command_100:
+*    |                   |_____ZREFRESH        ->Refreshes the Tree
+*    |
+*    |_Lines [23-55]: exit_command_100:
+*    |                   |__BACK,CANCEL,EXIT   Exit Program
+*    |   ----------------------------------------------------
+*    |            [Details Display Screen]      Action:
+*    |
+*    |_Lines [60-84]: user_command_900:
+*    |                   |_____ZREFRESH      ->Refreshes the Grid
+*    |
+*    |_Lines [86-116]: exit_command_900:
+*                        |_____BACK,CANCEL   Return to Tree Display Screen
 *                        |                   + Clear global var.
 *                        |_____EXIT          Exit Program
 

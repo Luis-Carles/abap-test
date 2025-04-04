@@ -3,7 +3,7 @@
 *&---------------------------------------------------------------------*
 
 "___________________________________________________________
-"________________Get & Make Data Subrouytines_______________
+"________________Get & Make Data Subroutines________________
 "___________________________________________________________
 
 FORM get_data.
@@ -342,6 +342,14 @@ FORM get_data.
   
   " Subroutine that refreshes the Column Tree.
   FORM refresh_tree.
+    PERFORM clearing.
+    PERFORM get_data.
+    IF gv_filled = abap_true.
+      PERFORM write_tree.
+    ELSE.
+      MESSAGE 'There is no data to display' TYPE 'E'.
+    ENDIF.
+  
     CALL METHOD cl_gui_cfw=>flush.
   ENDFORM.
   
@@ -355,7 +363,7 @@ FORM get_data.
       PERFORM set_tree_events.
   
     ELSE.
-      PERFORM refresh_tree.
+      CALL METHOD cl_gui_cfw=>flush.
     ENDIF.
   ENDFORM.
   
@@ -379,7 +387,8 @@ FORM get_data.
     CLEAR: go_ccontainer.
   
     " Clear Global variables
-    CLEAR: hierarchy_header, gv_filled.
+    CLEAR: hierarchy_header.
+    gv_filled = abap_false.
   
   ENDFORM.
   
@@ -387,7 +396,7 @@ FORM get_data.
   "________________EVENT HANDLING SUBROUTINES_________________
   "___________________________________________________________
   
-  " Subroutine that appends a new Details Result Row
+  " Subroutine that fills the correct field of the results row.
   FORM fill_result.
     CASE gs_item-ITEM_NAME.
       WHEN 'HIERARCHY'.
