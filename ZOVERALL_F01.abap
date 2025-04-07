@@ -461,6 +461,8 @@ FORM get_data.
   FORM when_double_click USING iv_type TYPE CHAR1.
     DATA: lv_key_parent TYPE string,
           lv_key_itself TYPE string,
+          lv_p_order    TYPE string,
+          lv_p_prod     TYPE string,
           lv_i_count    TYPE i VALUE 0,
           lv_index_now  TYPE sy-tabix.
   
@@ -499,14 +501,7 @@ FORM get_data.
             " matching items for this product
             IF lv_i_count = 17.
               " Append Row to gt_results
-              IF gs_result-ORDER_COUNT > 5.
-                gs_result-REG_STATUS = 'Regular Client'.
-              ELSE.
-                gs_result-REG_STATUS = 'Sporadic Client'.
-              ENDIF.
-              gs_result-COLOR = gt_det_colors.
-              APPEND gs_result TO gt_results.
-              CLEAR gs_result.
+              %ADD_RESULT.
   
               " There wont be any more matches
               EXIT.
@@ -534,14 +529,7 @@ FORM get_data.
             " matching items for this product
             IF lv_i_count = 17.
               " Append Row to gt_results
-              IF gs_result-ORDER_COUNT > 5.
-                gs_result-REG_STATUS = 'Regular Client'.
-              ELSE.
-                gs_result-REG_STATUS = 'Sporadic Client'.
-              ENDIF.
-              gs_result-COLOR = gt_det_colors.
-              APPEND gs_result TO gt_results.
-              CLEAR gs_result.
+              %ADD_RESULT.
   
               " Check the next Item
               READ TABLE gt_item_table INTO DATA(ls_item)
@@ -570,6 +558,10 @@ FORM get_data.
   
             LOOP AT gt_item_table INTO gs_item
               FROM lv_index_now.
+              " Store current item info
+              SPLIT gs_item-NODE_KEY AT '_'
+                INTO lv_key_parent lv_key_itself.
+  
               " Add the results row
               PERFORM fill_result.
   
@@ -579,33 +571,25 @@ FORM get_data.
               IF sy-subrc = 0.
                 FIND REGEX '^-?\d+' IN ls_item_c-NODE_KEY.
                 IF sy-subrc = 0.
-                  " NEXT ROW IS A NEW PRODUCT/ SAME ORDER
-                  CONTINUE.
+                  SPLIT ls_item_c-NODE_KEY AT '_'
+                    INTO lv_p_order lv_p_prod.
+                  IF lv_key_itself = lv_p_prod.
+                    " NEXT ROW IS AN ITEM OF THE SAME PRODUCT
+                    CONTINUE.
+                  ELSE.
+                    " NEXT ROW IS A NEW PRODUCT OR NEW ORDER
+                    " Append Row to gt_results
+                    %ADD_RESULT.
+                  ENDIF.
+  
                 ELSEIF ls_item_c-NODE_KEY CP 'Order*'.
                   " NEXT ROW IS A NEW ORDER/ SAME CLIENT
-                  " Append Row to gt_results
-                  IF gs_result-ORDER_COUNT > 5.
-                    gs_result-REG_STATUS = 'Regular Client'.
-                  ELSE.
-                    gs_result-REG_STATUS = 'Sporadic Client'.
-                  ENDIF.
-                  gs_result-COLOR = gt_det_colors.
-                  APPEND gs_result TO gt_results.
-                  CLEAR gs_result.
+                  CONTINUE.
   
-                  " Next Order
-                  lv_i_count = lv_i_count + 1.
                 ELSE.
                   " NEXT ROW IS A NEW CLIENT
                   " Append Row to gt_results
-                  IF gs_result-ORDER_COUNT > 5.
-                    gs_result-REG_STATUS = 'Regular Client'.
-                  ELSE.
-                    gs_result-REG_STATUS = 'Sporadic Client'.
-                  ENDIF.
-                  gs_result-COLOR = gt_det_colors.
-                  APPEND gs_result TO gt_results.
-                  CLEAR gs_result.
+                  %ADD_RESULT.
   
                   " That was the last Row to add
                   EXIT.
@@ -613,14 +597,7 @@ FORM get_data.
               ELSE.
                 " END OF THE item_table
                 " Append Row to gt_results
-                IF gs_result-ORDER_COUNT > 5.
-                  gs_result-REG_STATUS = 'Regular Client'.
-                ELSE.
-                  gs_result-REG_STATUS = 'Sporadic Client'.
-                ENDIF.
-                gs_result-COLOR = gt_det_colors.
-                APPEND gs_result TO gt_results.
-                CLEAR gs_result.
+                %ADD_RESULT.
   
                 " That was the last Row to add
                 EXIT.

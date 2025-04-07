@@ -296,6 +296,16 @@ REPORT ZCAFETEST_README.
 * Screen 100 ------> Display View
 * Screen 200 ------> Management View
 
+* (Note: In Management View, client information is not up to be
+* updated, that is a new client could be added to the DB, but 
+* previously existent client info will remain untouched except
+* for its order count when comeback. This also applies for order
+* info, while product information may be changed, the rest of 
+* previously closed order fields wont change, so it will be 
+* always posible to calcule that product price through the 
+* unchanged total and product ID, even if the quantities or
+* product name had been changed since)
+
 * -Reading by abstraction help:
 *    |_Lines [10-35]: Imports
 *    |_Lines [37-38]: Initialization
@@ -861,11 +871,16 @@ REPORT ZCAFETEST_README.
 *    |                |_&5: Lowercase? Signals if lowercase are allowed.
 *    |
 *    |_Lines [48-56]: %CUSTOM_COLOR: custom a field of results Table.
-*                     |
-*                     |_&1: FieldName, associated field for this color.
-*                     |_&2: Intense, color intense aesthetic option.
-*                     |_&3: Color, color code for this field.
-*                     |_&4: NO KEY? Signals if the field is a key.
+*    |                |
+*    |                |_&1: FieldName, associated field for this color.
+*    |                |_&2: Intense, color intense aesthetic option.
+*    |                |_&3: Color, color code for this field.
+*    |                |_&4: NO KEY? Signals if the field is a key.
+*    |   ----------------------------------------------------
+*    |             [Results Table Related Macros]
+*    |
+*    |_Lines [58-68]: %ADD_RESULT: Fills the derivated still empty
+*                                  fields of results row and append it.
 
 
 * __________________Soubroutines FXX:____________________________
@@ -1572,66 +1587,118 @@ REPORT ZCAFETEST_README.
 *    |
 *    |_Lines [400-457]: fill_result: Given an item, it fills th correct field in results row.
 *    |
-*    |_Lines [461-643]: when_double_click: receiving a double_click event type (Node / Item),
+*    |_Lines [461-620]: when_double_click: receiving a double_click event type (Node / Item),
 *    |     |            handles actions related to them. Building results table and opening.
 *    |     |            Details View Screen 900 if gt_results is not empty.
 *    |     |
-*    |     |_Lines [462-467]: Local Types and Variable Declaration
+*    |     |_Lines [462-469]: Local Types and Variable Declaration
 *    |     |     |_Types: X
 *    |     |     |_T.Types: X
 *    |     |     |
 *    |     |     |_Internal Tables: X
 *    |     |     |_Arquetypical Variables:
-*    |     |             |__lv_event     TYPE CNTL_SIMPLE_EVENT   Event Table Line
+*    |     |             |__lv_key_parent   TYPE string   Node_key first half when spliting.
+*    |     |             |__lv_key_itself   TYPE string   Node_key second half when spliting.
+*    |     |             |__lv_p_order      TYPE string   Next Node_key first half when spliting.
+*    |     |             |__lv_p_prod       TYPE string   Next Node_key second half when spliting.
+*    |     |             |__lv_i_count      TYPE i        Handled Items counter.
+*    |     |             |__lv_index_now    TYPE sy-tabix Currently being handled item index.
 *    |     |
-*    |     |_Lines [469-477]: Call to external methods to get the selected Node_key
+*    |     |_Lines [471-479]: Call to external methods to get the selected Node_key
 *    |     |                  depending on passed double_click event type parameter.
 *    |     |
-*    |     |_Lines [480-485]: Reads node_table trying to find selected Node_key,
+*    |     |_Lines [481-487]: Reads node_table trying to find selected Node_key,
 *    |     |                  spliting it to keep parent and Child Node information.
 *    |     |
-*    |     |_Lines [489-514]: SELECTED NODE IS a PRODUCT:
+*    |     |_Lines [489-509]: SELECTED NODE IS a PRODUCT:
 *    |     |     |
-*    |     |     |_Lines []:
-*    |     |
-*    |     |_Lines [516-562]: SELECTED NODE IS an ORDER:
+*    |     |     |_Lines [491-492]: If the first half of the node_key is a number,
+*    |     |     |                  that node is a product. So the loop is done in
+*    |     |     |                  every item for that node (17).
 *    |     |     |
-*    |     |     |_Lines []:
+*    |     |     |_Lines [495-498]: For each one,fills that column in results row and
+*    |     |     |                  keep the count of handled items.
+*    |     |     |
+*    |     |     |_Lines [502-507]: When we reach 17 handled items, we append the row
+*    |     |                        to results table and exit the loop.
 *    |     |
-*    |     |_Lines [564-629]: SELECTED NODE IS a CLIENT:
+*    |     |_Lines [511-550]: SELECTED NODE IS an ORDER:
+*    |     |     |
+*    |     |     |_Lines [511-514]: If the first half of the node_key is "Order" ,
+*    |     |     |                  that node is an order. So the loop is done in
+*    |     |     |                  every item that starts with the second half + '_'.
+*    |     |     |                  That is, every item that matches the orderID:
+*    |     |     |                  (17 * each ordered product).
+*    |     |     |
+*    |     |     |_Lines [517-526]: For each one, keeps the current index being handled,
+*    |     |     |                  fill that column in results row and keep the count
+*    |     |     |                  of handled items.
+*    |     |     |
+*    |     |     |_Lines [530-545]: When we reach 17 handled items, we append the row
+*    |     |                        to results table and read the next item using the
+*    |     |                        previously stored index +1. If the next Item is
+*    |     |                        also a product of the same order, we restart the
+*    |     |                        handled items counter, if not we exit the loop.
+*    |     |
+*    |     |_Lines [552-609]: SELECTED NODE IS a CLIENT:
 *    |           |
-*    |           |_Lines []:
+*    |           |_Lines [552-560]: If the first half of the node does not correspond
+*    |           |                  with a product nor with an order, then the selected
+*    |           |                  node must be a client. We stored the index of the
+*    |           |                  first matching item and increase it by 2 to avoid
+*    |           |                  the hierarchy headers. The loop is done in every
+*    |           |                  item but starting by that stored initial index.
+*    |           |
+*    |           |_Lines [562-572]: For each one, split the current node_key into two
+*    |           |                  halfs, fill that column in results row and checks
+*    |           |                  the next item node_key as we did in the beginning,
+*    |           |                  looking for a number.
+*    |           |
+*    |           |_Lines [573-603]: If starts by a number, the next item is a product
+*    |                              node, so we split its node_key and compare. If the
+*    |                              next item second half is the same, is an item of the
+*    |                              same product so we just continue. If differs, then
+*    |                              the next item is a new product of the same order so
+*    |                              we append the row to results table and continue.
+*    |                              If it does not start by a number but starts by "Order",
+*    |                              then the next Item is an order and we just continue,
+*    |                              since the row would have been appended after previous
+*    |                              item final checking.
+*    |                              If it was not a product nor an order then it must be
+*    |                              a new client, so we append the row to results table and
+*    |                              leave the program. Same modus operandi if we reached the
+*    |                              end of the item table and the search failed.
 *    |   ----------------------------------------------------
 *    |           [Details Display ALV GRID Subroutines]
 *    |
-*    |_Lines [667-672]: create_det_ccontainer: Creates the custom container for details
+*    |_Lines [644-649]: create_det_ccontainer: Creates the custom container for details
 *    |                  results table.
 *    |
-*    |_Lines [675-679]: create_det_grid: Creates the ALV GRID for details results table.
+*    |_Lines [652-656]: create_det_grid: Creates the ALV GRID for details results table.
 *    |
-*    |_Lines [682-693]: create_det_layout: Creates and customizes the ALV Layout.
+*    |_Lines [659-670]: create_det_layout: Creates and customizes the ALV Layout.
 *    |
-*    |_Lines [696-750]: custom_colors: Customizes the color scheme in the colors table,
+*    |_Lines [673-727]: custom_colors: Customizes the color scheme in the colors table,
 *    |                                  making calls to %CUSTOM_COLOR MACRO.
 *    |
-*    |_Lines [753-818]: custom_det_fieldcat: Loops through created field catalog,
+*    |_Lines [730-795]: custom_det_fieldcat: Loops through created field catalog,
 *    |                                  making calls to %CUSTOM_FIELD MACRO.
 *    |
-*    |_Lines [821-854]: create_det_fieldcat: SLIS Fieldcatalog creation and subsequent
+*    |_Lines [798-831]: create_det_fieldcat: SLIS Fieldcatalog creation and subsequent
 *    |                                       conversion to LVC FieldCatalog.
 *    |
-*    |_Lines [857-868]: custom_det_toolbar: Exclude non-used functions from ALV GRID toolbar.
+*    |_Lines [834-845]: custom_det_toolbar: Exclude non-used functions from ALV GRID toolbar.
 *    |
-*    |_Lines [871-883]: display_det_grid: Call for external method that display data in the grid
+*    |_Lines [848-860]: display_det_grid: Call for external method that display data in the grid
 *    |                                    for the first time.
 *    |
-*    |_Lines [886-897]: refresh_details: Call for external method to refresh the ALV GRID.
+*    |_Lines [863-874]: refresh_details: Call for external method to refresh the ALV GRID.
 *    |
-*    |_Lines [901-913]: write_details: Subroutine that is called from outise and make in order
+*    |_Lines [878-890]: write_details: Subroutine that is called from outise and make in order
 *    |                                 the necessary calls to create every ALV object and display
 *    |                                 details in Screen 900. (Refreshes if the grid is created).
 *    |
-*    |_Lines [917-930]: clearing_details: Clear every ALV object and variable if they wont be
+*    |_Lines [894-907]: clearing_details: Clear every ALV object and variable if they wont be
 *                                         used anymore, liberate memory space.
 
 

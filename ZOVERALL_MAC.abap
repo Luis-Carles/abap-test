@@ -54,3 +54,15 @@ DEFINE %CUSTOM_COLOR.
   APPEND gs_det_color TO gt_det_colors.
 
 END-OF-DEFINITION.
+
+DEFINE %ADD_RESULT.
+  IF gs_result-ORDER_COUNT > 5.
+    gs_result-REG_STATUS = 'Regular Client'.
+  ELSE.
+    gs_result-REG_STATUS = 'Sporadic Client'.
+  ENDIF.
+  gs_result-COLOR = gt_det_colors.
+  APPEND gs_result TO gt_results.
+  CLEAR gs_result.
+
+END-OF-DEFINITION.
