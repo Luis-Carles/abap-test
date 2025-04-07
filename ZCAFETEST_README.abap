@@ -269,7 +269,10 @@ REPORT ZCAFETEST_README.
 *              0330: (Retrieve Statistics)
 
 * (Note: the buttons, output/input fields and their disposition
-* can be inferred through PBO/PAI modules further explanation)
+*  can be inferred through PBO/PAI modules further explanation.
+*  Also, to avoid issues, make sure lowercase are enabled in each
+*  input/output field in the screens when data type are CHAR or
+*  strings. Make sure the length of the screen fields are enough)
 
 *   .....................
 
@@ -297,12 +300,12 @@ REPORT ZCAFETEST_README.
 * Screen 200 ------> Management View
 
 * (Note: In Management View, client information is not up to be
-* updated, that is a new client could be added to the DB, but 
+* updated, that is a new client could be added to the DB, but
 * previously existent client info will remain untouched except
 * for its order count when comeback. This also applies for order
-* info, while product information may be changed, the rest of 
-* previously closed order fields wont change, so it will be 
-* always posible to calcule that product price through the 
+* info, while product information may be changed, the rest of
+* previously closed order fields wont change, so it will be
+* always posible to calcule that product price through the
 * unchanged total and product ID, even if the quantities or
 * product name had been changed since)
 
@@ -443,6 +446,10 @@ REPORT ZCAFETEST_README.
 *     |
 *     |_Object Instances: X
 
+* (Note: the naming convention for global Internal variables is gt_
+*  being it_ for local Internal tables. Consider refactor if it
+*  brings value to the project in a non self-conatained scenario)
+
 *   .....................
 
 * -ZMP_CAFETEST_TOP:
@@ -479,14 +486,21 @@ REPORT ZCAFETEST_README.
 *     |   |_____gv_date TYPE DATS     date of statistics retrieval
 *     |   |
 *     |   |_____gv_time TYPE TIMS     time of statistics retrieval
+*     |   |
+*     |   |_____wa_order_product TYPE ty_product  Current Order Products Row
+*     |   |
+*     |   |_____OK_CODE TYPE sy-ucomm   Table Control code created by Wizard.
+*     |   |
+*     |   |_____G_TC_ORDER_PRODS_LINES TYPE sy-loopc  Table Control lines
+*     |                                               created by Wizard.
 *     |
 *     |__Internal tables:
-*     |   |___**gt_order_products: standard table of ty_product to
-*     |   |                        store current order product list
-*     |   |
-*     |   |_____gt_order_products: sorted table of ty_product
-*     |                           (primary key on prod_id)
+*     |   |_____gt_order_products: standard table of ty_product to
+*     |                            store current order product list
 *     |
+*     |__Controls:
+*     |   |_____TC_ORDER_PRODS: tableview of ty_product for Table Control
+*     |                         created by Wizard.
 *     |
 *     |_Object Instances:
 *         |_____lo_client_fan TYPE REF TO lcl_client
@@ -494,6 +508,10 @@ REPORT ZCAFETEST_README.
 *         |_____lo_order      TYPE REF TO lcl_order
 *         |
 *         |_____lo_handler    TYPE REF TO lcl_fourth_wing_handler
+
+* (Note: the naming convention for global working areas is gs_
+*  being wa_ for local working areas. Consider refactor if it
+*  brings value to the project in a non self-conatained scenario)
 
 *   .....................
 
@@ -1031,7 +1049,7 @@ REPORT ZCAFETEST_README.
 *    |                [PAI Subroutines]
 *    |
 *    |_Lines [6-13]: find_prod_id_230(id): given a product name
-*    |               returns that product id (Screen 230)
+*    |               returns that product id / price (Screen 230)
 *    |
 *    |_Lines [15-24]: add_product_230(ty_product): inserts the new
 *    |                product in the product list of the current
@@ -1717,10 +1735,16 @@ REPORT ZCAFETEST_README.
 *    |
 *    |_Lines [61-71]: create_order_230(): creates an order from
 *    |                scratch. (Screen 230 - Client Ordering action)
+*    |
+*    |_Lines [75-77]: TC_ORDER_PRODS_CHANGE_TC_ATTR(). Module created
+*    |               by Wizard that update lines for T.Control.
+*    |
+*    |_Lines [81-83]: TC_ORDER_PRODS_GET_LINES(). Module created by
+*    |               Wizard that retrieve lines from T.Control.
 *    |   ----------------------------------------------------
 *    |                [Retrieve modules]
 *    |
-*    |_Lines [73-138]: retrieve methods for output fields. Calls for
+*    |_Lines [85-150]: retrieve methods for output fields. Calls for
 *                      collecting methods in ZMAIN_F03.
 
 *   .....................
@@ -1771,49 +1795,52 @@ REPORT ZCAFETEST_README.
 *    |               information and payment method/current total for
 *    |               the order. Retrieving for ordering layout.
 *    |
-*    |_Lines [123-154]: user_command_230:
+*    |_Lines [125-132]: TC_ORDER_PRODS_USER_COMMAND: Module created by
+*    |                 Wizard that processes user command on T.Control.
+*    |
+*    |_Lines [134-165]: user_command_230:
 *    |                   |_____ADD_PRODUCT    ->Add product to order
 *    |                   |_____ONEW_ORDER     ->Close Order
 *    |                   |_____LOG_OUT        Go to Log Out screen
 *    |
-*    |_Lines [157-179]: user_command_290:
+*    |_Lines [168-190]: user_command_290:
 *    |                   |_____BACK           Return to Initial M.
 *    |                                        + Clear global var.
 *    |   ----------------------------------------------------
 *    |                [Employee Screens]       Action:
 *    |
-*    |_Lines [182-196]: user_command_300:
+*    |_Lines [193-207]: user_command_300:
 *    |                   |_____UPDATE_STOCK    Go to UpdateS screen
 *    |                   |_____ADD_NEW_PROD    Go to Add new screen
 *    |                   |_____STATS           Go to stats screen
 *    |                   |_____BACK            Return to Initial M.
 *    |                   |_____EXIT            Exit Program
 *    |
-*    |_Lines [199-221]: retrieve_input_values_310: Shows existent
+*    |_Lines [210-232]: retrieve_input_values_310: Shows existent
 *    |               and new values for the product in AddP layout.
 *    |
-*    |_Lines [223-258]: user_command_310:
+*    |_Lines [234-269]: user_command_310:
 *    |                   |_____UPDATE_STOCK   ->Update product info
 *    |                   |_____CANCEL         Return to Employee M.
 *    |                                        + Clear global var.
 *    |
-*    |_Lines [261-270]: user_command_315:
+*    |_Lines [272-281]: user_command_315:
 *    |                   |_____BACK           Return to Employee M.
 *    |                                        + Clear global var.
 *    |
-*    |_Lines [273-277]: retrieve_input_values_320: Shows product
+*    |_Lines [284-288]: retrieve_input_values_320: Shows product
 *    |                values for Add product to stock layout.
 *    |
-*    |_Lines [279-306]: user_command_320:
+*    |_Lines [290-317]: user_command_320:
 *    |                   |_____ADD_PROD       ->Add prod to stock
 *    |                   |_____CANCEL         Return to Employee M.
 *    |                                        + Clear global var.
 *    |
-*    |_Lines [309-317]: user_command_325:
+*    |_Lines [320-328]: user_command_325:
 *    |                   |_____BACK           Return to Employee M.
 *    |                                        + Clear global var.
 *    |
-*    |_Lines [320-327]: user_command_330:
+*    |_Lines [331-338]: user_command_330:
 *                        |_____BACK           Return to Employee M.
 *                                             + Clear global var.
 

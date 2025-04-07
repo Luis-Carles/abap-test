@@ -115,9 +115,20 @@ MODULE retrieve_input_values_230 INPUT.
 *                            CHANGING wa_desired_product.
 *        wa_sproduct-prod_id = wa_desired_product-prod_id.
   PERFORM find_prod_id_230 USING wa_sproduct-prod_name
-                           CHANGING wa_sproduct-prod_id.
-
+                    CHANGING wa_sproduct-prod_id wa_sproduct-prod_price.
+  MOVE: wa_sproduct-prod_price TO wa_sproduct-prod_price.
   MOVE: wa_sproduct-prod_id TO wa_sproduct-prod_id.
+ENDMODULE.
+
+*&SPWIZARD: INPUT MODULE FOR TC 'TC_ORDER_PRODS'. DO NOT CHANGE THIS LIN
+*&SPWIZARD: PROCESS USER COMMAND
+MODULE TC_ORDER_PRODS_USER_COMMAND INPUT.
+  OK_CODE = SY-UCOMM.
+  PERFORM USER_OK_TC USING    'TC_ORDER_PRODS'
+                              'GT_ORDER_PRODUCTS'
+                              ' '
+                     CHANGING OK_CODE.
+  SY-UCOMM = OK_CODE.
 ENDMODULE.
 
 MODULE user_command_230 INPUT.
