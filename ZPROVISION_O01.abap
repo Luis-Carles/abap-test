@@ -7,22 +7,22 @@
 "___________________________________________________________
 MODULE status_100 OUTPUT.
   SET PF-STATUS 'MANAGEMENT'.
-  SET TITLEBAR 'S100' WITH 'Clients'.
+  SET TITLEBAR 'S100' WITH TEXT-A01. " Clients
 ENDMODULE.
 
 MODULE status_200 OUTPUT.
   SET PF-STATUS 'MANAGEMENT'.
-  SET TITLEBAR 'S100' WITH 'Products'.
+  SET TITLEBAR 'S100' WITH TEXT-A02. " Products
 ENDMODULE.
 
 MODULE status_300 OUTPUT.
   SET PF-STATUS 'MANAGEMENT'.
-  SET TITLEBAR 'S100' WITH 'Closed Orders'.
+  SET TITLEBAR 'S100' WITH TEXT-A03. " Closed Orders
 ENDMODULE.
 
 MODULE status_400 OUTPUT.
   SET PF-STATUS 'MANAGEMENT'.
-  SET TITLEBAR 'S100' WITH 'Order Products'.
+  SET TITLEBAR 'S100' WITH TEXT-A04. " Order Products
 ENDMODULE.
 
 "___________________________________________________________

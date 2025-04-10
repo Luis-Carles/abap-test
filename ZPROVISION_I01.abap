@@ -14,7 +14,7 @@ MODULE user_command INPUT.
       PERFORM refresh_grid USING 'X'.
 
     WHEN 'ZADD'.
-      PERFORM insert_row.
+      PERFORM add_row.
 
       PERFORM refresh_grid USING ''.
 
@@ -32,7 +32,7 @@ MODULE user_command INPUT.
 ENDMODULE.
 
 MODULE exit_command INPUT.
-  CLEAR gv_code.
+  CLEAR: gv_code, gv_answer.
   gv_code = ok_code.
   CLEAR ok_code.
 
@@ -41,17 +41,11 @@ MODULE exit_command INPUT.
       PERFORM clearing.
       LEAVE TO SCREEN 0.
 
-    WHEN 'EXIT'.
-      CALL FUNCTION 'POPUP_TO_CONFIRM'
-      EXPORTING
-        TEXT_QUESTION  = 'Do you want to exit?'
-        TEXT_BUTTON_1  = 'Yes'
-        TEXT_BUTTON_2  = 'No'
-      IMPORTING
-        ANSWER         = gv_answer
-      EXCEPTIONS
-        TEXT_NOT_FOUND = 1
-        OTHERS         = 2.
+    WHEN 'EXIT'.             " Confirmation Pop-Up Window
+      DATA(lv_exit_question) = SWITCH string( gv_langu
+                                  WHEN 'KR' THEN TEXT-Q01
+                                  ELSE TEXT-Q02 ).
+      %POP_UP lv_exit_question.
 
       IF gv_answer = '1'.
         PERFORM clearing.

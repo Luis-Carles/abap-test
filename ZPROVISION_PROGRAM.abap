@@ -68,5 +68,5 @@ END-OF-SELECTION.
     ENDCASE.
 
   ELSE.
-    MESSAGE 'There is no data to display.' TYPE 'E'.
+    MESSAGE TEXT-E05 TYPE 'E'.
   ENDIF.
