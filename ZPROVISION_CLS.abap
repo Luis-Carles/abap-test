@@ -40,7 +40,7 @@ CLASS lcl_handler IMPLEMENTATION.
           ENDIF.
         ENDLOOP.
 
-      WHEN 'PO'.                    " Order Products View
+      WHEN 'OP'.                    " Order Products View
         LOOP AT er_data_changed->mt_good_cells INTO gs_chg_row.
           ASSIGN gt_clients[ gs_chg_row-row_id ] TO FIELD-SYMBOL(<fs_ordproduct>).
           IF <fs_ordproduct> IS ASSIGNED.

@@ -96,9 +96,10 @@ END-OF-DEFINITION.
 "   &1: CLIENT_ID
 DEFINE %ADD_CLIENT.
   APPEND VALUE #(
-    CLIENT_ID  = &1
-    COLOR      = gt_colors
-    flag_NEW   = 'X'
+    CLIENT_ID   = &1
+    ORDER_COUNT = 0
+    COLOR       = gt_colors
+    flag_NEW    = 'X'
   ) TO gt_clients.
 
 END-OF-DEFINITION.
@@ -122,7 +123,10 @@ END-OF-DEFINITION.
 DEFINE %ADD_ORDER.
   APPEND VALUE #(
     ORDER_ID   = &1
+    ORDER_DATE = sy-datum
+    ORDER_TIME = sy-uzeit
     WAERS      = 'EUR'
+    PAYMENT_METHOD = 'Credit Card'
     COLOR      = gt_colors
     flag_NEW   = 'X'
   ) TO gt_corders.

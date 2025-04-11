@@ -14,7 +14,7 @@ TABLES: zclients,     " Master DB Table that stores Clients information
 " Global variables
 DATA(gv_tab)    =  CONV CHAR2( 'CL' ).  " Chosen DB table
 DATA(gv_filled) =  abap_false.          " Is there Data to display?
-DATA(gv_langu)  = sy-langu.             " System Language
+DATA(gv_langu)  =  sy-langu.             " System Language
 
 DATA: gv_code       TYPE sy-ucomm,      " Global variables to avoid
       ok_code       TYPE sy-ucomm,      " messing with sy-ucomm
@@ -25,12 +25,6 @@ DATA: gv_code       TYPE sy-ucomm,      " Global variables to avoid
 
 "_______________________________________________________________________
 " Internal tables and Structures Declaration
-
-DATA: gs_zclient           TYPE zclients,    " Persistence Rows used
-      gs_zproduct          TYPE zproducts,   " when saving to avoid
-      gs_zcorder           TYPE zcorders,    " compatibility issues
-      gs_zordproduct       TYPE zordproducts.
-
 TYPES: BEGIN OF ty_corder,     " Closed Orders type + Table Type
          ORDER_ID          LIKE zcorders-ORDER_ID,
          PAYMENT_METHOD    LIKE zcorders-PAYMENT_METHOD,

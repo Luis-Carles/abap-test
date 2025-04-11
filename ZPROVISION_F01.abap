@@ -70,7 +70,7 @@ FORM get_client_data.
                     TEXT-D10 0 7 '' ,  " (WAERS)
                     TEXT-D11 0 5 '' .  " (PAYMENT_METHOD)
   
-      WHEN 'PO'.
+      WHEN 'OP'.
   
         %ADD_COLOR: TEXT-D12 0 1 'X',  " (PROD_ID)
                     TEXT-D01 0 1 'X',  " (ORDER_ID)
@@ -100,7 +100,7 @@ FORM get_client_data.
           <fs_corder>-COLOR = gt_colors.
         ENDLOOP.
   
-      WHEN 'PO'.
+      WHEN 'OP'.
         LOOP AT gt_ordproducts ASSIGNING FIELD-SYMBOL(<fs_ordproduct>).
           <fs_ordproduct>-COLOR = gt_colors.
         ENDLOOP.
@@ -139,7 +139,7 @@ FORM get_client_data.
           PERFORM make_data.
         ENDIF.
   
-      WHEN 'PO'.
+      WHEN 'POP'.
         PERFORM get_ordprod_data.
   
         DATA(lv_ordprod_lines) = LINES( gt_ordproducts ).
@@ -217,8 +217,8 @@ FORM get_client_data.
       WHEN 'CL'.
         %ADD_FIELD: TEXT-D02 'X' TEXT-C02 1 ''  ''  'C'," Client Code
                     TEXT-D03 ''  TEXT-C03 2 'X' 'X' 'C'," Client Name
-                    TEXT-D04 ''  TEXT-C04 3 'X' 'X' 'C'," Client Lastname
-                    TEXT-D05 ''  TEXT-C05 4 'X' ''  'C'." Client Order Count
+                    TEXT-D04 ''  TEXT-C04 3 'X' 'X' 'C'," Cl. Lastname
+                    TEXT-D05 ''  TEXT-C05 4 'X' ''  'C'." Cl. OrderCount
   
         %HIDE_FIELD: TEXT-D19, " flag_NEW
                      TEXT-D20, " flag_CHG
@@ -237,7 +237,7 @@ FORM get_client_data.
   
       WHEN 'CO'.
         %ADD_FIELD: TEXT-D01 'X' TEXT-C01 1 ''  ''  'C'," Order Number
-                    TEXT-D18 'X' TEXT-C02 2 ''  ''  'C'," Client Code
+                    TEXT-D18 'X' TEXT-C02 2 'X' ''  'C'," Client Code
                     TEXT-D06 ''  TEXT-C06 3 'X' ''  'C'," Order Date
                     TEXT-D07 ''  TEXT-C07 4 'X' ''  'C'," Order Time
                     TEXT-D09 ''  TEXT-C09 5 ''  ''  'C'," Order Total
@@ -251,7 +251,7 @@ FORM get_client_data.
       WHEN 'OP'.
         %ADD_FIELD: TEXT-D12 'X' TEXT-C12 1 ''  ''  'C'," Product Code
                     TEXT-D01 'X' TEXT-C01 2 ''  ''  'C'," Order Number
-                    TEXT-D15 ''  TEXT-C15 3 'X' ''  'C'," Product Quantity
+                    TEXT-D15 ''  TEXT-C15 3 'X' ''  'C'," Product Quan.
                     TEXT-D17 ''  TEXT-C17 4 ''  ''  'C'." Unit
   
         %HIDE_FIELD: TEXT-D19, " flag_NEW
@@ -261,7 +261,7 @@ FORM get_client_data.
     ENDCASE.
   ENDFORM.
   
-  " Subroutine that eliminates every non neccesary button in AlV toolbar
+  " Subroutine that eliminates every non neccesary button in  toolbar
   FORM custom_toolbar CHANGING ct_excluded TYPE ui_functions.
     APPEND:   cl_gui_alv_grid=>mc_fc_refresh           TO  ct_excluded,
               cl_gui_alv_grid=>mc_fc_loc_copy          TO  ct_excluded,
@@ -287,7 +287,7 @@ FORM get_client_data.
       WHEN 'CO'.
         %DISPLAY gt_corders.
   
-      WHEN 'PO'.
+      WHEN 'OP'.
         %DISPLAY gt_ordproducts.
     ENDCASE.
   ENDFORM.
@@ -330,7 +330,6 @@ FORM get_client_data.
   FORM clearing.
     " Clear internal tables / Persistance var. / ALV var. / Flags.
     CLEAR: gt_clients, gt_products, gt_corders, gt_ordproducts,
-           gs_zclient, gs_zproduct, gs_zcorder, gs_zordproduct,
            gs_layout,  gt_fieldcat, gt_toolbar_ex, gt_colors,
            gv_code,    ok_code,     gv_answer,  gs_chg_row.
     gv_filled = abap_false.
@@ -384,7 +383,7 @@ FORM get_client_data.
                               ) + 1.
         %ADD_ORDER lv_co_next_id.
   
-      WHEN 'PO'.
+      WHEN 'OP'.
         %ADD_ORDPRODUCT.
   
     ENDCASE.
@@ -393,7 +392,8 @@ FORM get_client_data.
   " Subroutine that deletes selected row/s in correspondent Db Table.
   FORM delete_row.
     CLEAR: gv_answer, gv_delete, gt_sel_rows.
-  
+    "_________________________________________________________________
+    " Get the selected rows and confirms the users intention
     go_grid->get_selected_rows(
       IMPORTING
         et_index_rows = gt_sel_rows
@@ -405,81 +405,285 @@ FORM get_client_data.
     %POP_UP lv_delete_question.
     CHECK gv_answer = 1.
   
+    "_________________________________________________________________
+    " Loop through correspondent Table making deletions and updates
     CASE gv_tab.
-      WHEN 'CL'.
+      WHEN 'CL'.                             " Clients
         LOOP AT gt_sel_rows ASSIGNING FIELD-SYMBOL(<fs_sel_client>).
           " Delete that client
-          DATA(lv_cl_id) =
-            gt_clients[ line_index(
-                gt_clients[ <fs_sel_client>-INDEX ] )
-                      ]-CLIENT_ID.
-          DELETE FROM zclients WHERE CLIENT_ID = lv_cl_id.
+          DATA(lv_cl_tbd) = gt_clients[ <fs_sel_client>-INDEX ].
+          DELETE FROM zclients WHERE CLIENT_ID = lv_cl_tbd-CLIENT_ID.
   
-          " Delete that client Orders
-          " Delete that order products
+          LOOP AT gt_corders
+            ASSIGNING FIELD-SYMBOL(<fs_c_corder_tbd>).
+            " Delete that client order order products
+            LOOP AT gt_ordproducts
+              ASSIGNING FIELD-SYMBOL(<fs_c_ordproduct_tbd>).
+              DELETE FROM zordproducts
+                WHERE ORDER_ID = <fs_c_corder_tbd>-ORDER_ID.
+            ENDLOOP.
+  
+            " Delete that client order
+            DELETE FROM zcorders
+              WHERE ORDER_CLIENT = lv_cl_tbd-CLIENT_ID.
+          ENDLOOP.
   
         ENDLOOP.
   
-      WHEN 'PR'.
+      WHEN 'PR'.                             " Products
         LOOP AT gt_sel_rows ASSIGNING FIELD-SYMBOL(<fs_sel_product>).
           " Delete that product
-          DATA(lv_pr_id) =
-            gt_products[ line_index(
-                gt_products[ <fs_sel_product>-INDEX ] )
-                       ]-PROD_ID.
-          DELETE FROM zproducts WHERE PROD_ID = lv_pr_id.
-  
-          " Delete that product orders????
-          " Delete that order products????
+          DATA(lv_pr_tbd) = gt_products[ <fs_sel_product>-INDEX ].
+          DELETE FROM zproducts WHERE PROD_ID = lv_pr_tbd-PROD_ID.
   
         ENDLOOP.
   
-      WHEN 'OR'.
+      WHEN 'OR'.                             " Closed Orders
         LOOP AT gt_sel_rows ASSIGNING FIELD-SYMBOL(<fs_sel_corder>).
           " Delete that Order
-          DATA(lv_co_id) =
-            gt_corders[ line_index(
-                gt_corders[ <fs_sel_corder>-INDEX ] )
-                      ]-ORDER_ID.
-          DELETE FROM zcorders WHERE ORDER_ID = lv_co_id.
+          DATA(lv_co_tbd) = gt_corders[ <fs_sel_corder>-INDEX ].
+          DELETE FROM zcorders WHERE ORDER_ID = lv_co_tbd-ORDER_ID.
   
-          " Delete that order products
-          " Update client order_count????
+          " Delete that Order products
+          LOOP AT gt_ordproducts
+            ASSIGNING FIELD-SYMBOL(<fs_o_ordproduct_tbd>).
+            DELETE FROM zordproducts
+            WHERE ORDER_ID = lv_co_tbd-ORDER_ID.
+          ENDLOOP.
   
         ENDLOOP.
   
-      WHEN 'PO'.
-        LOOP AT gt_sel_rows ASSIGNING FIELD-SYMBOL(<fs_sel_ordproduct>).
-          " Delete that Ordered Product
-          DATA(lv_op_o_id) =
-            gt_ordproducts[ line_index(
-                gt_ordproducts[ <fs_sel_ordproduct>-INDEX ] )
-                           ]-ORDER_ID.
-          DATA(lv_op_p_id) =
-            gt_ordproducts[ line_index(
-                gt_ordproducts[ <fs_sel_ordproduct>-INDEX ] )
-                           ]-PROD_ID.
-          DELETE FROM zordproducts WHERE ORDER_ID = lv_op_o_id
-                                    AND  PROD_ID  = lv_op_p_id.
+      WHEN 'OP'.                             " Order Products
+        DATA lv_total_tbu TYPE int2 VALUE 0.
   
-          " Delete that ordered product Order????
-          " Update that order Total????
+        LOOP AT gt_sel_rows
+          ASSIGNING FIELD-SYMBOL(<fs_sel_ordproduct>).
+          " Get that product order
+          DATA(lv_op_tbd) =
+            gt_ordproducts[ <fs_sel_ordproduct>-INDEX ].
   
+          " Update that order Total
+          " Check the total for FW events
+          LOOP AT gt_ordproducts
+            ASSIGNING FIELD-SYMBOL(<fs_op_ordproduct_tbu>)
+            WHERE ORDER_ID = lv_op_tbd-ORDER_ID.
+            lv_total_tbu = lv_total_tbu +
+              ( <fs_op_ordproduct_tbu>-PROD_QUANTITY *
+              gt_products[ PROD_ID =
+                <fs_op_ordproduct_tbu>-PROD_ID ]-PROD_PRICE ).
+          ENDLOOP.
+  
+          " If total coincides, then just updates the Total
+          IF lv_total_tbu =
+            gt_corders[ ORDER_ID = lv_op_tbd-ORDER_ID ]-TOTAL.
+            " Calcules new Total
+            lv_total_tbu = lv_total_tbu - ( lv_op_tbd-PROD_QUANTITY *
+            gt_products[ PROD_ID = lv_op_tbd-PROD_ID ]-PROD_PRICE ).
+  
+            " Updates Total
+            UPDATE zcorders SET TOTAL = lv_total_tbu
+              WHERE ORDER_ID = lv_op_tbd-ORDER_ID.
+  
+          ELSE. " The order had a 50% Discount on it
+            " Calcules new Total
+            lv_total_tbu = lv_total_tbu - ( lv_op_tbd-PROD_QUANTITY *
+            gt_products[ PROD_ID = lv_op_tbd-PROD_ID ]-PROD_PRICE ).
+  
+            " We redo the 50%discount and Update Total
+            lv_total_tbu = lv_total_tbu / 2.
+            UPDATE zcorders SET TOTAL = lv_total_tbu
+              WHERE ORDER_ID = lv_op_tbd-ORDER_ID.
+          ENDIF.
+  
+          " Delete that Order Product
+          DELETE FROM zordproducts WHERE ORDER_ID = lv_op_tbd-ORDER_ID
+                                    AND  PROD_ID  = lv_op_tbd-PROD_ID.
         ENDLOOP.
   
     ENDCASE.
+    "_________________________________________________________________
+      " Given any error, rollback.
+    IF gv_delete = 'E'.
+      ROLLBACK WORK.
+      MESSAGE TEXT-E09 TYPE 'E'.
+    ELSE.
+        DATA(lv_delete_msg) = SWITCH string( gv_langu
+                                  WHEN 'KR' THEN TEXT-S01
+                                  ELSE TEXT-S02 ).
+        MESSAGE lv_delete_msg TYPE 'S'.
+    ENDIF.
   ENDFORM.
   
   " Subroutine that check any input values for new rows prior to
   " save those changes in the DB tables.
   FORM validate_check.
+    CLEAR: gv_answer,gv_check.
+    "_________________________________________________________________
+    " Check for changed values and apply them to results table
+    go_grid->check_changed_data(
+      IMPORTING
+        e_valid = DATA(lv_valid)
+    ).
+                            " Confirmation Pop-Up Window
+    DATA(lv_save_question) = SWITCH string( gv_langu
+                              WHEN 'KR' THEN TEXT-Q05
+                              ELSE TEXT-Q06 ).
+    %POP_UP lv_save_question.
+    CHECK gv_answer = 1.
   
+    "_________________________________________________________________
+    " Loop through results performing input validation
+    CASE gv_tab.
+      WHEN 'CL'.
+        LOOP AT gt_clients ASSIGNING FIELD-SYMBOL(<fs_cl_chk>)
+          WHERE flag_NEW = 'X' OR flag_CHG = 'X'.
+          " Check Client name / Last name
+          IF <fs_cl_chk>-CLIENT_NAME IS INITIAL OR
+             <fs_cl_chk>-CLIENT_LAST_NAME IS INITIAL.
+            gv_check = 'E'.
+            MESSAGE TEXT-E11 TYPE 'E'. EXIT.
+  
+          " Check positive order count
+          ELSEIF <fs_cl_chk>-ORDER_COUNT IS INITIAL OR
+                 <fs_cl_chk>-ORDER_COUNT < 0.
+            gv_check = 'E'.
+            MESSAGE TEXT-E12 TYPE 'E'. EXIT.
+          ENDIF.
+        ENDLOOP.
+  
+      WHEN 'PR'.
+        LOOP AT gt_products ASSIGNING FIELD-SYMBOL(<fs_pr_chk>)
+          WHERE flag_NEW = 'X' OR flag_CHG = 'X'.
+          " Check product name
+          IF <fs_pr_chk>-PROD_NAME IS INITIAL.
+            gv_check = 'E'.
+            MESSAGE TEXT-E13 TYPE 'E'. EXIT.
+  
+          " Check price and stock
+          ELSEIF <fs_pr_chk>-PROD_PRICE IS INITIAL    OR
+                 <fs_pr_chk>-PROD_PRICE < 0           OR
+                 <fs_pr_chk>-PROD_QUANTITY IS INITIAL OR
+                 <fs_pr_chk>-PROD_QUANTITY < 0.
+            gv_check = 'E'.
+            MESSAGE TEXT-E14 TYPE 'E'. EXIT.
+          ENDIF.
+        ENDLOOP.
+  
+      WHEN 'CO'.
+        LOOP AT gt_corders ASSIGNING FIELD-SYMBOL(<fs_co_chk>)
+          WHERE flag_NEW = 'X' OR flag_CHG = 'X'.
+          " Check date / time / Payment method
+          IF <fs_co_chk>-ORDER_DATE     IS INITIAL OR
+             <fs_co_chk>-ORDER_TIME     IS INITIAL OR
+             <fs_co_chk>-PAYMENT_METHOD IS INITIAL.
+            gv_check = 'E'.
+            MESSAGE TEXT-E15 TYPE 'E'. EXIT.
+  
+          " Check total
+          ELSEIF <fs_co_chk>-TOTAL IS INITIAL        OR
+                 <fs_co_chk>-TOTAL < 0               OR
+                 <fs_co_chk>-ORDER_CLIENT IS INITIAL OR
+                 <fs_co_chk>-ORDER_CLIENT < 0.
+            gv_check = 'E'.
+            MESSAGE TEXT-E16 TYPE 'E'. EXIT.
+  
+          " Check if client exists
+          ELSEIF NOT line_exists( gt_clients[ CLIENT_ID =
+            <fs_co_chk>-ORDER_CLIENT ] ).
+            gv_check = 'E'.
+            MESSAGE TEXT-E17 TYPE 'E'. EXIT.
+          ENDIF.
+        ENDLOOP.
+  
+      WHEN 'OP'.
+        LOOP AT gt_ordproducts ASSIGNING FIELD-SYMBOL(<fs_op_chk>)
+          WHERE flag_NEW = 'X' OR flag_CHG = 'X'.
+          " Check if Order exists
+          IF NOT line_exists( gt_corders[ ORDER_ID =
+            <fs_op_chk>-ORDER_ID ] ).
+            gv_check = 'E'.
+            MESSAGE TEXT-E18 TYPE 'E'. EXIT.
+  
+          " Check if Product exists
+          ELSEIF NOT line_exists( gt_products[ PROD_ID =
+            <fs_op_chk>-PROD_ID ] ).
+            gv_check = 'E'.
+            MESSAGE TEXT-E19 TYPE 'E'. EXIT.
+  
+          " Check quantity
+          ELSEIF <fs_op_chk>-PROD_QUANTITY IS INITIAL OR
+                 <fs_op_chk>-PROD_QUANTITY < 0.
+            gv_check = 'E'.
+            MESSAGE TEXT-E20 TYPE 'E'. EXIT.
+          ENDIF.
+        ENDLOOP.
+  
+    ENDCASE.
   ENDFORM.
   
   " Subroutine that save changes into the Internal and DB table.
   FORM save_changes.
+    CLEAR: gv_save.
+    "_________________________________________________________________
+    " Validates that every change is compliant with DB consistency
     PERFORM validate_check.
-    CHECK gv_check IS INITIAL.
+    CHECK gv_check IS NOT INITIAL.
   
-    " DOING!!
+    "_________________________________________________________________
+    " Loop through correspondent Table making insertions and updates
+    CASE gv_tab.
+      WHEN 'CL'.
+        " Insert NEW Clients
+        FIELD-SYMBOLS: <fs_cl_tbi> TYPE ty_client.
+        DATA(lt_cl_tbi) = VALUE zclients(
+                             FOR  <fs_cl_tbi> IN gt_clients
+                             WHERE ( flag_NEW = 'X' )
+                             ( CORRESPONDING zclients( <fs_cl_tbi> ) )
+                          ).
+        IF lt_cl_tbi IS NOT INITIAL.
+          INSERT zclients FROM TABLE @lt_cl_tbi.
+          IF sy-subrc <> 0.
+            gv_save = 'E'.
+            EXIT.
+          ENDIF.
+        ENDIF.
+  
+        " Update CHANGED Clients
+        FIELD-SYMBOLS: <fs_cl_tbc> TYPE ty_client.
+        DATA(lt_cl_tbc) = VALUE zclients(
+                             FOR  <fs_cl_tbc> IN gt_clients
+                             WHERE ( flag_CHG = 'X' )
+                             ( CORRESPONDING zclients( <fs_cl_tbc> ) )
+                          ).
+        IF lt_cl_tbc IS NOT INITIAL.
+  
+          IF sy-subrc <> 0.
+            UPDATE zclients FROM TABLE @lt_cl_tbc.
+            gv_save = 'E'.
+            EXIT.
+          ENDIF.
+        ENDIF.
+  
+      WHEN 'PR'.
+  
+  
+      WHEN 'CO'.
+  
+  
+      WHEN 'OP'.
+  
+  
+    ENDCASE.
+    "_________________________________________________________________
+      " Given any error , rollback.
+      IF gv_save = 'E'.
+        ROLLBACK WORK.
+        MESSAGE TEXT-E10 TYPE 'E'.
+      ELSE.
+        COMMIT WORK AND WAIT.
+        DATA(lv_save_msg) = SWITCH string( gv_langu
+                                  WHEN 'KR' THEN TEXT-S03
+                                  ELSE TEXT-S04 ).
+        MESSAGE lv_save_msg TYPE 'S'.
+      ENDIF.
   ENDFORM.
